@@ -1,0 +1,50 @@
+﻿<div id="location-popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4 hidden">
+    <div id="location-popup" class="bg-white rounded-lg max-w-md w-full max-h-[80vh] overflow-hidden transform scale-95 opacity-0 transition-all duration-300">
+        <!-- Header -->
+        <div class="flex items-center justify-between p-4 border-b">
+            <h2 class="text-lg font-semibold text-gray-900">Chọn địa chỉ giao hàng</h2>
+            <button id="close-location-popup" class="p-1 hover:bg-gray-100 rounded-full transition-colors">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
+
+        <div class="p-4 space-y-4 max-h-[calc(80vh-65px)] overflow-y-auto">
+            <!-- Search -->
+            <div class="relative">
+                <i data-lucide="search" class="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400"></i>
+                <input type="text" id="address-search-input" placeholder="Tìm kiếm địa chỉ..."
+                       class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+            </div>
+
+            <!-- Current Location -->
+            <div>
+                <button id="popup-get-location-btn" class="w-full flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50">
+                    <div class="flex-shrink-0">
+                        <i data-lucide="navigation" class="h-5 w-5 text-red-600"></i>
+                    </div>
+                    <div class="flex-1 text-left">
+                        <p class="font-medium text-gray-900">Sử dụng vị trí hiện tại</p>
+                    </div>
+                </button>
+                <div id="popup-current-location-result" class="hidden mt-2">
+                    <p class="text-sm text-gray-600 p-2 bg-gray-100 rounded-md"></p>
+                    <button id="popup-select-current-location" class="w-full mt-2 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700 transition-colors">
+                        Chọn vị trí này
+                    </button>
+                </div>
+            </div>
+
+            <!-- Saved Addresses -->
+            <div>
+                <h3 class="font-medium text-gray-900 mb-2 flex items-center">
+                    <i data-lucide="clock" class="h-4 w-4 mr-1"></i>
+                    Địa chỉ đã lưu
+                </h3>
+                <div id="saved-addresses-list" class="space-y-2">
+                    <!-- Địa chỉ đã lưu sẽ được chèn vào đây bằng JavaScript -->
+                    <div class="text-center text-gray-500 py-4">Đang tải...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

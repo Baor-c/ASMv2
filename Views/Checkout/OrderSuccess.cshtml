@@ -1,0 +1,116 @@
+﻿@model FastFoodApp.ViewModels.OrderSuccessViewModel
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+}
+
+<!-- Link tới thư viện icon Lucide -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-lg shadow-lg overflow-hidden animate-zoom-in">
+            <!-- Success Header -->
+            <div class="bg-green-50 p-8 text-center">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="check-circle" class="h-12 w-12 text-green-600"></i>
+                </div>
+                <h1 class="text-2xl font-bold text-gray-900 mb-2">
+                    Đặt hàng thành công! 🎉
+                </h1>
+                <p class="text-gray-600">
+                    Cảm ơn bạn đã đặt hàng. Chúng tôi sẽ chuẩn bị món ăn ngay lập tức!
+                </p>
+            </div>
+
+            <!-- Order Details -->
+            <div class="p-6 sm:p-8">
+                <div class="mb-6">
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                        Thông tin đơn hàng #@Model.MaHoaDon
+                    </h2>
+
+                    <div class="bg-gray-50 rounded-lg p-4 space-y-3">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="clock" class="h-5 w-5 text-blue-600"></i>
+                            <div>
+                                <p class="font-medium text-gray-900">Thời gian giao hàng dự kiến</p>
+                                <p class="text-sm text-gray-600">@Model.ThoiGianGiaoHangDuKien.ToString("g")</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-start space-x-2">
+                            <i data-lucide="map-pin" class="h-5 w-5 text-red-600 mt-0.5"></i>
+                            <div>
+                                <p class="font-medium text-gray-900">Địa chỉ giao hàng</p>
+                                <p class="text-sm text-gray-600">@Model.DiaChiGiaoHang</p>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="phone" class="h-5 w-5 text-green-600"></i>
+                            <div>
+                                <p class="font-medium text-gray-900">Số điện thoại</p>
+                                <p class="text-sm text-gray-600">@Model.SoDienThoai</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Items -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-3">Món đã đặt</h3>
+                    <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                        @foreach (var item in Model.Items)
+                        {
+                                <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                    <img src="data:image/png;base64,@item.HinhAnh" alt="@item.TenSanPham" class="w-12 h-12 rounded-lg object-cover" />
+                                    <div class="flex-1">
+                                        <p class="font-medium">@item.TenSanPham</p>
+                                        <p class="text-sm text-gray-600">
+                                            Số lượng: @item.SoLuong × @item.DonGia.ToString("N0")đ
+                                        </p>
+                                    </div>
+                                </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Total -->
+                <div class="border-t pt-4 mb-6">
+                    <div class="flex justify-between items-center">
+                        <span class="text-lg font-semibold text-gray-900">Tổng thanh toán:</span>
+                        <span class="text-2xl font-bold text-red-600">
+                            @Model.TongTienThanhToan.ToString("N0")đ
+                        </span>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-1">
+                        Thanh toán: @Model.PhuongThucThanhToan
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a asp-controller="Order" asp-action="Details" asp-route-id="@Model.MaHoaDon" class="flex-1 w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors text-center">
+                        Theo dõi đơn hàng
+                    </a>
+                    <a asp-controller="Product" asp-action="Index" class="flex-1 w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors text-center">
+                        Tiếp tục mua sắm
+                    </a>
+                </div>
+
+                <!-- Contact Info -->
+                <div class="mt-8 p-4 bg-blue-50 rounded-lg text-center">
+                    <p class="text-sm text-blue-800">
+                        Có thắc mắc về đơn hàng? Liên hệ hotline: 
+                        <span class="font-semibold"> 1900 1900</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script để kích hoạt icons -->
+<script>
+    lucide.createIcons();
+</script>

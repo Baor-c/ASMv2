@@ -1,0 +1,169 @@
+﻿@model List<FastFoodApp.ViewModels.OrderHistoryViewModel>
+@{
+    ViewData["Title"] = "Lịch sử đơn hàng";
+
+    // Helper to get styling based on order status
+    Func<string, (string icon, string text, string color)> GetStatusDetails = (status) =>
+    {
+        switch (status)
+        {
+            case "Chờ xử lý":
+                return ("clock", "Chờ xử lý", "bg-yellow-100 text-yellow-800");
+            case "Đang chuẩn bị":
+                return ("package", "Đang chuẩn bị", "bg-blue-100 text-blue-800");
+            case "Sẵn sàng":
+                return ("check-circle", "Sẵn sàng", "bg-indigo-100 text-indigo-800");
+            case "Đang giao":
+                return ("truck", "Đang giao", "bg-purple-100 text-purple-800");
+            case "Đã giao":
+                return ("check-circle-2", "Đã giao", "bg-green-100 text-green-800");
+            case "Đã hủy":
+                return ("x-circle", "Đã hủy", "bg-red-100 text-red-800");
+            default:
+                return ("clock", status, "bg-gray-100 text-gray-800");
+        }
+    };
+}
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="mb-8 animate-fade-in">
+            <h1 class="text-3xl font-bold text-gray-900 mb-2">Lịch sử đơn hàng</h1>
+            <p class="text-gray-600">Theo dõi tất cả đơn hàng của bạn tại đây.</p>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="bg-white rounded-xl shadow-lg p-4 mb-6 animate-slide-up">
+            <div class="flex flex-wrap gap-2">
+                @{
+                    var filters = new[] {
+                        ("all", "Tất cả"),
+                        ("Chờ xử lý", "Chờ xử lý"),
+                        ("Đang chuẩn bị", "Đang chuẩn bị"),
+                        ("Đang giao", "Đang giao"),
+                        ("Đã giao", "Đã giao"),
+                        ("Đã hủy", "Đã hủy")
+                    };
+                    var currentFilter = ViewData["CurrentFilter"] as string ?? "all";
+                }
+                @foreach (var (key, label) in filters)
+                {
+                    var activeClass = currentFilter.Equals(key, StringComparison.OrdinalIgnoreCase) ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200";
+                        <a asp-action="Index" asp-route-statusFilter="@key"
+                           class="px-4 py-2 rounded-lg font-medium transition-colors @activeClass">
+                        @label
+                        </a>
+                }
+            </div>
+        </div>
+
+        <!-- Orders List -->
+        @if (!Model.Any())
+        {
+                <div class="text-center py-16 animate-zoom-in">
+                    <div class="text-6xl mb-6">📋</div>
+                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Chưa có đơn hàng nào</h2>
+                    <p class="text-gray-600 mb-8">Hãy đặt món ngon đầu tiên của bạn ngay thôi!</p>
+                    <a asp-controller="Product" asp-action="Index"
+                       class="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-transform transform hover:scale-105 inline-block">
+                        Đặt hàng ngay
+                    </a>
+                </div>
+        }
+        else
+        {
+                <div class="space-y-6">
+                @foreach (var order in Model)
+                {
+                    var statusDetails = GetStatusDetails(order.TrangThai);
+                            <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-slide-up">
+                                <!-- Order Header -->
+                                <div class="p-6 border-b border-gray-200">
+                                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="mb-4 sm:mb-0">
+                                            <h3 class="text-lg font-semibold text-gray-900">
+                                                Đơn hàng #@order.MaHoaDon
+                                            </h3>
+                                            <p class="text-sm text-gray-600">
+                                                Đặt lúc: @order.NgayDat.ToString("g")
+                                            </p>
+                                        </div>
+                                        <div class="flex items-center space-x-4">
+                                            <div class="px-3 py-1 rounded-full text-sm font-medium @statusDetails.color">
+                                                <div class="flex items-center space-x-1">
+                                                    <i data-lucide="@statusDetails.icon" class="h-4 w-4"></i>
+                                                    <span>@statusDetails.text</span>
+                                                </div>
+                                            </div>
+                                            <a asp-controller="Order" asp-action="Details" asp-route-id="@order.MaHoaDon" class="flex items-center space-x-1 text-red-600 hover:text-red-700 font-medium">
+                                                <i data-lucide="eye" class="h-4 w-4"></i>
+                                                <span>Chi tiết</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Order Details -->
+                                <div class="p-6">
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <!-- Items -->
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900 mb-3">Món đã đặt</h4>
+                                            <div class="space-y-2 max-h-48 overflow-y-auto pr-2">
+                                        @foreach (var item in order.Items)
+                                        {
+                                                        <div class="flex items-center space-x-3">
+                                                            <img src="data:image/png;base64,@item.HinhAnh" alt="@item.TenSanPham" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" />
+                                                            <div class="flex-1">
+                                                                <p class="font-medium text-sm">@item.TenSanPham</p>
+                                                                <p class="text-xs text-gray-600">
+                                                                    Số lượng: @item.SoLuong × @item.DonGia.ToString("N0")đ
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                        }
+                                            </div>
+                                        </div>
+
+                                        <!-- Order Info -->
+                                        <div>
+                                            <h4 class="font-semibold text-gray-900 mb-3">Thông tin giao hàng</h4>
+                                            <div class="space-y-2 text-sm">
+                                                <div class="flex items-start space-x-2">
+                                                    <i data-lucide="map-pin" class="h-4 w-4 text-gray-400 mt-0.5 flex-shrink-0"></i>
+                                                    <span class="text-gray-600">@order.DiaChiGiaoHang</span>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <i data-lucide="phone" class="h-4 w-4 text-gray-400 flex-shrink-0"></i>
+                                                    <span class="text-gray-600">@order.SoDienThoai</span>
+                                                </div>
+                                                <div class="flex items-center space-x-2">
+                                                    <i data-lucide="clock" class="h-4 w-4 text-gray-400 flex-shrink-0"></i>
+                                                    <span class="text-gray-600">
+                                                        Dự kiến: @order.NgayDat.AddMinutes(30).ToString("g")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Total -->
+                                    <div class="mt-6 pt-4 border-t border-gray-200">
+                                        <div class="flex justify-between items-center">
+                                            <span class="text-lg font-semibold text-gray-900">Tổng cộng:</span>
+                                            <span class="text-xl font-bold text-red-600">@order.TongTien.ToString("N0")đ</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                }
+                </div>
+        }
+    </div>
+</div>
+
+<!-- Script để kích hoạt icons -->
+<script>
+    lucide.createIcons();
+</script>

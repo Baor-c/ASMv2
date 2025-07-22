@@ -1,0 +1,134 @@
+﻿@model FastFoodApp.ViewModels.OrderTrackingViewModel
+@{
+    ViewData["Title"] = "Theo dõi đơn hàng #" + Model.MaHoaDon;
+}
+
+<!-- Link tới thư viện icon Lucide -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<div class="min-h-screen bg-gray-50 py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Header -->
+        <div class="flex items-center mb-8 animate-fade-in">
+            <a asp-action="Index" asp-controller="Order" class="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                <i data-lucide="arrow-left" class="h-6 w-6 text-gray-600"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    Theo dõi đơn hàng #@Model.MaHoaDon
+                </h1>
+                <p class="text-gray-600 text-sm">Đặt lúc: @Model.NgayDat.ToString("g")</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Tracking Timeline -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
+                    <h2 class="text-xl font-semibold mb-6">Trạng thái đơn hàng</h2>
+
+                    <div class="relative pl-6">
+                        @for (int i = 0; i < Model.TrackingSteps.Count; i++)
+                        {
+                            var step = Model.TrackingSteps[i];
+                            var iconBgClass = step.IsCompleted ? "bg-green-100 border-green-600" : (step.IsCurrent ? "bg-blue-100 border-blue-600" : "bg-gray-100 border-gray-300");
+                            var iconColorClass = step.IsCompleted ? "text-green-600" : (step.IsCurrent ? "text-blue-600" : "text-gray-400");
+                            var titleColorClass = step.IsCompleted ? "text-green-700" : (step.IsCurrent ? "text-blue-700" : "text-gray-500");
+
+                                <!-- Vertical line -->
+                            @if (i < Model.TrackingSteps.Count - 1)
+                            {
+                                var lineBgClass = step.IsCompleted ? "bg-green-600" : "bg-gray-300";
+                                        <div class="absolute left-6 w-0.5 h-full top-0 -translate-x-1/2 @lineBgClass" style="margin-top: 3rem; height: calc(100% - 3rem);"></div>
+                            }
+
+                                <div class="flex items-start space-x-4 mb-8 relative">
+                                    <!-- Icon -->
+                                    <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center border-2 z-10 bg-white @iconBgClass">
+                                    @if (step.Status == "Đang giao")
+                                    {
+                                        <i data-lucide="truck" class="h-6 w-6 @iconColorClass"></i>
+                                    }
+                                    else if (step.Status == "Đang chuẩn bị")
+                                    {
+                                        <i data-lucide="package" class="h-6 w-6 @iconColorClass"></i>
+                                    }
+                                    else if (step.Status == "Đã giao")
+                                    {
+                                        <i data-lucide="check-circle-2" class="h-6 w-6 @iconColorClass"></i>
+                                    }
+                                    else
+                                    {
+                                        <i data-lucide="clock" class="h-6 w-6 @iconColorClass"></i>
+                                    }
+                                    </div>
+
+                                    <!-- Content -->
+                                    <div class="flex-1 min-w-0 pt-1.5">
+                                        <div class="flex items-center justify-between">
+                                            <h3 class="font-semibold @titleColorClass">@step.Title</h3>
+                                        @if (step.Timestamp.HasValue)
+                                        {
+                                                    <span class="text-sm text-gray-500">@step.Timestamp.Value.ToString("g")</span>
+                                        }
+                                        </div>
+                                        <p class="text-sm text-gray-600 mt-1">@step.Description</p>
+                                    </div>
+                                </div>
+                        }
+                    </div>
+
+                    <!-- Estimated Delivery -->
+                    <div class="mt-8 p-4 bg-yellow-50 rounded-lg">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="clock" class="h-5 w-5 text-yellow-600"></i>
+                            <span class="font-semibold text-yellow-800">Thời gian giao hàng dự kiến</span>
+                        </div>
+                        <p class="text-yellow-700 mt-1">@Model.ThoiGianGiaoHangDuKien.ToString("g")</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <aside class="lg:col-span-1">
+                <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8 animate-slide-up" style="animation-delay: 100ms;">
+                    <h2 class="text-xl font-semibold mb-4">Chi tiết đơn hàng</h2>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-900 mb-2">Thông tin khách hàng</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="flex items-center space-x-2"><i data-lucide="user" class="h-4 w-4 text-gray-400"></i><span class="text-gray-600">@Model.HoTenKhachHang</span></div>
+                            <div class="flex items-center space-x-2"><i data-lucide="phone" class="h-4 w-4 text-gray-400"></i><span class="text-gray-600">@Model.SoDienThoai</span></div>
+                            <div class="flex items-start space-x-2"><i data-lucide="map-pin" class="h-4 w-4 text-gray-400 mt-0.5"></i><span class="text-gray-600">@Model.DiaChiGiaoHang</span></div>
+                        </div>
+                    </div>
+
+                    <div class="mb-6">
+                        <h3 class="font-semibold text-gray-900 mb-2">Món đã đặt</h3>
+                        <div class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                            @foreach (var item in Model.Items)
+                            {
+                                    <div class="flex items-center space-x-3">
+                                        <img src="data:image/png;base64,@item.HinhAnh" alt="@item.TenSanPham" class="w-12 h-12 rounded-lg object-cover" />
+                                        <div class="flex-1"><p class="font-medium text-sm">@item.TenSanPham</p><p class="text-xs text-gray-600">@item.SoLuong × @item.DonGia.ToString("N0")đ</p></div>
+                                    </div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="border-t pt-4">
+                        <div class="flex justify-between items-center">
+                            <span class="font-semibold text-gray-900">Tổng cộng:</span>
+                            <span class="text-xl font-bold text-red-600">@Model.TongTien.ToString("N0")đ</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    </div>
+</div>
+
+<!-- Script để kích hoạt icons -->
+<script>
+    lucide.createIcons();
+</script>

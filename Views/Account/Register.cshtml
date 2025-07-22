@@ -1,0 +1,73 @@
+﻿@model FastFoodApp.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Đăng ký";
+}
+
+<div class="min-h-screen bg-gradient-to-br from-red-50 via-white to-yellow-50 py-12 px-4">
+    <div class="max-w-md mx-auto">
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-red-600 to-yellow-500 p-6 text-white text-center">
+                <div class="text-4xl mb-2">🍔</div>
+                <h1 class="text-2xl font-bold">FastBite</h1>
+                <p class="opacity-90 mt-1">Tạo tài khoản mới</p>
+            </div>
+
+            <!-- Toggle Buttons -->
+            <div class="flex p-2 bg-gray-50">
+                <a asp-action="Login" class="flex-1 py-2 px-4 rounded-lg font-medium transition-colors text-gray-600 hover:text-red-600 text-center">
+                    Đăng nhập
+                </a>
+                <a asp-action="Register" class="flex-1 py-2 px-4 rounded-lg font-medium transition-colors bg-red-600 text-white text-center">
+                    Đăng ký
+                </a>
+            </div>
+
+            <!-- Register Form -->
+            <div class="p-6">
+                <form asp-action="Register" method="post" class="space-y-4">
+                    <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
+
+                    <div class="relative">
+                        <input asp-for="HoTen" placeholder="Họ và tên" class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <span asp-validation-for="HoTen" class="text-red-600 text-sm"></span>
+                    </div>
+                    <div class="relative">
+                        <input asp-for="Email" placeholder="Email" class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <span asp-validation-for="Email" class="text-red-600 text-sm"></span>
+                    </div>
+                    <div class="relative">
+                        <input asp-for="SoDienThoai" placeholder="Số điện thoại" class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <span asp-validation-for="SoDienThoai" class="text-red-600 text-sm"></span>
+                    </div>
+                    <div class="relative">
+                        <input asp-for="DiaChi" placeholder="Địa chỉ" class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <span asp-validation-for="DiaChi" class="text-red-600 text-sm"></span>
+                    </div>
+                    <div class="relative">
+                        <input asp-for="NgaySinh" class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <span asp-validation-for="NgaySinh" class="text-red-600 text-sm"></span>
+                    </div>
+                    <div class="relative">
+                        <input asp-for="MatKhau" placeholder="Mật khẩu" class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <span asp-validation-for="MatKhau" class="text-red-600 text-sm"></span>
+                    </div>
+                    <div class="relative">
+                        <input asp-for="XacNhanMatKhau" placeholder="Xác nhận mật khẩu" class="w-full pl-4 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+                        <span asp-validation-for="XacNhanMatKhau" class="text-red-600 text-sm"></span>
+                    </div>
+
+                    <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors">
+                        Đăng ký
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

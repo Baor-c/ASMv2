@@ -1,0 +1,340 @@
+﻿@using System.Security.Claims
+@using Microsoft.AspNetCore.Http
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - FastBite</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-gray-50">
+    <header class="sticky top-0 bg-white shadow-lg z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo -->
+                <a asp-controller="Home" asp-action="Index" class="flex items-center space-x-2">
+                    <div class="text-3xl">🍔</div>
+                    <span class="text-2xl font-bold text-red-600">FastBite</span>
+                </a>
+
+                <!-- Desktop Navigation -->
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a asp-controller="Home" asp-action="Index" class="text-gray-700 hover:text-red-600 font-medium transition-colors">Trang chủ</a>
+                    <a asp-controller="Product" asp-action="Index" class="text-gray-700 hover:text-red-600 font-medium transition-colors">Thực đơn</a>
+                    <a asp-controller="Order" asp-action="Index" class="text-gray-700 hover:text-red-600 font-medium transition-colors">Lịch sử</a>
+                </nav>
+
+                <!-- Location Selector -->
+                <button id="location-selector-btn" class="hidden lg:flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
+                    <i data-lucide="map-pin" class="w-4 h-4"></i>
+                    <span id="current-address-display" class="max-w-48 truncate">
+                        @Context.Session.GetString("CurrentAddress") ?? "Chọn địa chỉ"
+                    </span>
+                </button>
+
+                <!-- Right Actions -->
+                <div class="flex items-center space-x-4">
+                    <!-- Cart -->
+                    <a asp-controller="Cart" asp-action="Index" class="relative p-2 text-gray-700 hover:text-red-600 transition-colors">
+                        <i data-lucide="shopping-cart" class="h-6 w-6"></i>
+                        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                    </a>
+
+                    <!-- User -->
+                    @if (User.Identity.IsAuthenticated)
+                    {
+                            <a asp-controller="Account" asp-action="Profile" class="p-2 text-gray-700 hover:text-red-600 transition-colors" title="Hồ sơ của tôi">
+                                <i data-lucide="user" class="h-6 w-6"></i>
+                            </a>
+                    }
+                    else
+                    {
+                            <a asp-controller="Account" asp-action="Login" class="p-2 text-gray-700 hover:text-red-600 transition-colors" title="Đăng nhập">
+                                <i data-lucide="user" class="h-6 w-6"></i>
+                            </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main role="main" class="flex-grow">
+        @RenderBody()
+    </main>
+
+    <footer class="bg-gray-900 text-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                <div class="space-y-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-3xl">🍔</span>
+                        <span class="text-2xl font-bold text-red-500">FastBite</span>
+                    </div>
+                    <p class="text-gray-300 text-sm">Thức ăn nhanh chất lượng cao, phục vụ 24/7.</p>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-red-500">Liên kết nhanh</h3>
+                    <ul class="space-y-2">
+                        <li><a asp-controller="Home" asp-action="Index" class="text-gray-300 hover:text-white transition-colors text-sm">Trang chủ</a></li>
+                        <li><a asp-controller="Product" asp-action="Index" class="text-gray-300 hover:text-white transition-colors text-sm">Thực đơn</a></li>
+                    </ul>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-red-500">Thông tin liên hệ</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-2 text-sm"><i data-lucide="phone" class="h-4 w-4 text-red-500"></i><span class="text-gray-300">1900 1900</span></div>
+                        <div class="flex items-center space-x-2 text-sm"><i data-lucide="mail" class="h-4 w-4 text-red-500"></i><span class="text-gray-300">support@fastbite.vn</span></div>
+                    </div>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold text-red-500">Nhận thông tin mới</h3>
+                    <form class="space-y-2">
+                        <input type="email" placeholder="Email của bạn" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" />
+                        <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-md font-medium hover:bg-red-700 transition-colors text-sm">Đăng ký</button>
+                    </form>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center">
+                <p class="text-gray-400 text-sm">&copy; 2024 FastBite - All Rights Reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    @await Html.PartialAsync("_LocationPopup")
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Cập nhật số lượng giỏ hàng khi trang vừa tải xong
+            updateCartCount();
+
+            // Lắng nghe sự kiện submit trên toàn bộ trang
+            document.body.addEventListener('submit', function(event) {
+                if (event.target.matches('.ajax-add-to-cart-form')) {
+                    event.preventDefault();
+                    const form = event.target;
+                    const formData = new FormData(form);
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: new URLSearchParams(formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateCartCount(data.cartCount);
+                            showToast(data.message || 'Đã thêm vào giỏ!');
+                        } else {
+                            showToast(data.message || 'Có lỗi xảy ra', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('Không thể kết nối đến máy chủ', 'error');
+                    });
+                }
+            });
+
+            // LOGIC CHO POPUP ĐỊA CHỈ
+            const locationPopupOverlay = document.getElementById('location-popup-overlay');
+            const locationPopup = document.getElementById('location-popup');
+            const openPopupBtn = document.getElementById('location-selector-btn');
+            const closePopupBtn = document.getElementById('close-location-popup');
+            const savedAddressesList = document.getElementById('saved-addresses-list');
+            const addressDisplay = document.getElementById('current-address-display');
+            const popupGetLocationBtn = document.getElementById('popup-get-location-btn');
+            const popupLocationResult = document.getElementById('popup-current-location-result');
+            const popupLocationText = popupLocationResult.querySelector('p');
+            const popupSelectLocationBtn = document.getElementById('popup-select-current-location');
+
+            if(openPopupBtn) {
+                openPopupBtn.addEventListener('click', () => {
+                    locationPopupOverlay.classList.remove('hidden');
+                    setTimeout(() => locationPopup.classList.remove('scale-95', 'opacity-0'), 10);
+                    loadSavedAddresses();
+                });
+            }
+
+            function closePopup() {
+                locationPopup.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => locationPopupOverlay.classList.add('hidden'), 300);
+            }
+            if(closePopupBtn) closePopupBtn.addEventListener('click', closePopup);
+            if(locationPopupOverlay) locationPopupOverlay.addEventListener('click', (e) => {
+                if (e.target === locationPopupOverlay) closePopup();
+            });
+
+            function loadSavedAddresses() {
+                if(!savedAddressesList) return;
+                savedAddressesList.innerHTML = '<div class="text-center text-gray-500 py-4">Đang tải...</div>';
+                fetch('@Url.Action("GetUserAddressesJson", "Account")')
+                    .then(response => {
+                        if (response.status === 401) {
+                           savedAddressesList.innerHTML = '<p class="text-sm text-gray-500 text-center">Vui lòng <a href="/Account/Login" class="text-red-600 underline">đăng nhập</a> để xem địa chỉ đã lưu.</p>';
+                           return null;
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (!data) return;
+                        savedAddressesList.innerHTML = '';
+                        if (data.length > 0) {
+                            data.forEach(addr => {
+                                const addrElement = document.createElement('button');
+                                addrElement.className = 'w-full flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left';
+                                addrElement.innerHTML = `
+                                    <i data-lucide="home" class="h-5 w-5 text-gray-500"></i>
+                                    <div class="flex-1">
+                                        <p class="font-medium text-gray-900">${addr.tenNguoiNhan}</p>
+                                        <p class="text-sm text-gray-600">${addr.diaChiCuThe}</p>
+                                    </div>`;
+                                addrElement.onclick = () => selectAddress(addr.diaChiCuThe);
+                                savedAddressesList.appendChild(addrElement);
+                            });
+                        } else {
+                            savedAddressesList.innerHTML = '<p class="text-sm text-gray-500 text-center">Bạn chưa có địa chỉ nào. Hãy thêm trong trang cá nhân.</p>';
+                        }
+                        lucide.createIcons();
+                    });
+            }
+
+            function selectAddress(address) {
+                if(addressDisplay) addressDisplay.textContent = address;
+                fetch('@Url.Action("SetCurrentAddress", "Account")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ address: address })
+                });
+                closePopup();
+            }
+
+            if (popupGetLocationBtn) {
+                popupGetLocationBtn.addEventListener('click', function() {
+                    const originalButtonHTML = this.innerHTML;
+                    if (navigator.geolocation) {
+                        this.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-red-700 mx-auto"></div>';
+                        this.disabled = true;
+
+                        navigator.geolocation.getCurrentPosition(
+                            (position) => {
+                                const lat = position.coords.latitude;
+                                const lon = position.coords.longitude;
+
+                                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=vi`)
+                                    .then(response => response.json())
+                                    .then(data => {
+                                        if (data && data.display_name) {
+                                            popupLocationText.textContent = data.display_name;
+                                            popupLocationResult.classList.remove('hidden');
+                                        } else {
+                                            showToast('Không thể tìm thấy địa chỉ từ vị trí này.', 'error');
+                                        }
+                                    })
+                                    .catch(err => showToast('Lỗi khi lấy thông tin địa chỉ.', 'error'))
+                                    .finally(() => {
+                                        this.innerHTML = originalButtonHTML;
+                                        this.disabled = false;
+                                        lucide.createIcons();
+                                    });
+                            },
+                            (error) => {
+                                let errorMessage = 'Không thể lấy vị trí.';
+                                if (error.code === error.PERMISSION_DENIED) {
+                                    errorMessage = "Bạn đã từ chối yêu cầu truy cập vị trí.";
+                                }
+                                showToast(errorMessage, 'error');
+                                this.innerHTML = originalButtonHTML;
+                                this.disabled = false;
+                                lucide.createIcons();
+                            }
+                        );
+                    } else {
+                        showToast('Trình duyệt của bạn không hỗ trợ định vị.', 'error');
+                    }
+                });
+            }
+
+            if(popupSelectLocationBtn) popupSelectLocationBtn.addEventListener('click', () => {
+                if(popupLocationText.textContent) {
+                    selectAddress(popupLocationText.textContent);
+                }
+            });
+        });
+
+        function updateCartCount(count) {
+            const cartCountElement = document.getElementById('cart-count');
+            if (!cartCountElement) return;
+
+            if (count !== undefined) {
+                if (count > 0) {
+                    cartCountElement.textContent = count;
+                    cartCountElement.classList.remove('hidden');
+                } else {
+                    cartCountElement.textContent = '0';
+                    cartCountElement.classList.add('hidden');
+                }
+            } else {
+                 fetch('@Url.Action("GetCartCount", "Cart")')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.count > 0) {
+                            cartCountElement.textContent = data.count;
+                            cartCountElement.classList.remove('hidden');
+                        } else {
+                            cartCountElement.textContent = '0';
+                            cartCountElement.classList.add('hidden');
+                        }
+                    });
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const toastContainer = document.getElementById('toast-container') || createToastContainer();
+            const toast = document.createElement('div');
+            const icon = type === 'success' ? 'check-circle' : 'x-circle';
+            const colors = type === 'success' ? 'bg-green-500' : 'bg-red-500';
+
+            toast.className = `flex items-center space-x-2 p-4 rounded-lg shadow-lg text-white ${colors} transform transition-transform duration-300 translate-x-full`;
+            toast.innerHTML = `<i data-lucide="${icon}" class="h-5 w-5"></i><span>${message}</span>`;
+
+            toastContainer.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('translate-x-full');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function createToastContainer() {
+            const container = document.createElement('div');
+            container.id = 'toast-container';
+            container.className = 'fixed top-20 right-5 z-[100] space-y-2';
+            document.body.appendChild(container);
+            return container;
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>

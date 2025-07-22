@@ -1,0 +1,65 @@
+﻿@model ASM1.Models.Combo
+@{
+    ViewData["Title"] = Model.TenCombo;
+}
+
+<div class="min-h-screen bg-white py-8">
+    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- Combo Image -->
+            <div class="animate-fade-in">
+                <div class="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg shadow-lg">
+                    <img src="data:image/png;base64,@Convert.ToBase64String(Model.HinhAnh ?? new byte[0])" alt="@Model.TenCombo" class="w-full h-full object-cover" />
+                </div>
+            </div>
+
+            <!-- Combo Details & Form -->
+            <div class="animate-slide-up">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">@Model.TenCombo</h1>
+                <p class="text-gray-600 mb-4">@Model.MoTa</p>
+                <p class="text-3xl font-bold text-red-600 mb-6">@Model.Gia.ToString("N0")đ</p>
+
+                <!-- Included Items -->
+                <div class="mb-6">
+                    <h3 class="font-semibold text-gray-900 mb-3">Bao gồm các món:</h3>
+                    <div class="space-y-3">
+                        @if (Model.ChiTietCombos != null && Model.ChiTietCombos.Any())
+                        {
+                            @foreach (var detail in Model.ChiTietCombos)
+                            {
+                                        <div class="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+                                            <div class="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0">
+                                                <img src="data:image/png;base64,@Convert.ToBase64String(detail.MonAn.HinhAnh ?? new byte[0])" alt="@detail.MonAn.TenMonAn" class="w-full h-full object-cover" />
+                                            </div>
+                                            <p class="font-medium text-sm">@detail.MonAn.TenMonAn</p>
+                                        </div>
+                            }
+                        }
+                        else
+                        {
+                                <p class="text-sm text-gray-500">Chưa có thông tin chi tiết về các món trong combo này.</p>
+                        }
+                    </div>
+                </div>
+
+                <!-- Add to Cart Form -->
+                <form asp-controller="Cart" asp-action="AddComboToCart" method="post">
+                    <input type="hidden" name="id" value="@Model.MaCombo" />
+                    <div class="flex items-center space-x-4 mb-6">
+                        <label class="block text-sm font-medium text-gray-700">Số lượng</label>
+                        <input type="number" name="quantity" value="1" class="w-20 text-center border-gray-300 rounded-md" min="1" />
+                    </div>
+                    <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors">
+                        Thêm vào giỏ hàng
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+        <script>
+            lucide.createIcons();
+        </script>
+}

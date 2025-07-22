@@ -1,0 +1,136 @@
+﻿@model FastFoodApp.ViewModels.HomeViewModel
+@{
+    ViewData["Title"] = "Trang Chủ";
+}
+
+<!-- Hero Section -->
+<section class="relative bg-gradient-to-br from-red-500 via-red-600 to-yellow-500 text-white overflow-hidden">
+    <!-- Background Pattern -->
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-10 left-10 text-6xl transform rotate-12">🍔</div>
+        <div class="absolute top-32 right-20 text-4xl transform -rotate-12">🍟</div>
+        <div class="absolute bottom-20 left-20 text-5xl transform rotate-6">🥤</div>
+        <div class="absolute bottom-32 right-10 text-4xl transform rotate-12">🍗</div>
+    </div>
+
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 lg:py-32">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- Left Content -->
+            <div class="text-center lg:text-left animate-fade-in">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-6">
+                    Thức Ăn Nhanh
+                    <span class="block text-yellow-300">Siêu Ngon!</span>
+                </h1>
+
+                <p class="text-xl mb-8 opacity-90 max-w-lg mx-auto lg:mx-0">
+                    Đặt món dễ dàng, giao hàng nhanh chóng 24/7. 
+                    Thưởng thức hương vị tuyệt hảo ngay tại nhà bạn!
+                </p>
+
+                <!-- CTA Buttons -->
+                <div class="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
+                    <a asp-controller="Product" asp-action="Index" 
+                       class="bg-white text-red-600 px-8 py-4 rounded-full font-bold text-lg flex items-center justify-center space-x-2 hover:bg-gray-100 transition-transform transform hover:scale-105 w-full sm:w-auto">
+                        <span>Đặt ngay</span>
+                        <i data-lucide="arrow-right" class="h-5 w-5"></i>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Right Content - Food Image -->
+            <div class="relative animate-zoom-in" style="animation-delay: 200ms;">
+                <img src="https://images.pexels.com/photos/1639557/pexels-photo-1639557.jpeg" 
+                     alt="Delicious Burger" 
+                     class="w-80 h-80 md:w-96 md:h-96 object-cover rounded-full shadow-2xl mx-auto border-8 border-white/20" />
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Products Section -->
+<section class="py-16 bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-12 animate-slide-up">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+                Món Ăn Nổi Bật
+            </h2>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Những món ăn được yêu thích nhất và mới nhất từ FastBite
+            </p>
+        </div>
+
+        <!-- Products Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+            @for (int i = 0; i < Model.MonAns.Count; i++)
+            {
+                var item = Model.MonAns[i];
+
+                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-all duration-300 animate-slide-up" style="animation-delay: @(i*100)ms;">
+                        <div class="relative h-48 overflow-hidden">
+                            <a asp-controller="Product" asp-action="Details" asp-route-id="@item.MaMonAn">
+                                 <img src="data:image/png;base64,@Convert.ToBase64String(item.HinhAnh ?? new byte[0])" alt="@item.TenMonAn" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
+                            </a>
+                            <!-- Badges -->
+                            <div class="absolute top-3 left-3 flex flex-col gap-2">
+                            @if (item.IsPopular)
+                            {
+                                        <span class="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-medium">Phổ biến</span>
+                            }
+                            @if (item.IsNew)
+                            {
+                                        <span class="bg-green-500 text-white px-2 py-1 rounded-full text-xs font-medium">Mới</span>
+                            }
+                            </div>
+                        </div>
+
+                        <div class="p-4 flex flex-col flex-grow">
+                            <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+                                <div class="flex items-center">
+                                    <i data-lucide="star" class="h-4 w-4 text-yellow-400 fill-current mr-1"></i>
+                                    <span>@item.Rating (@item.ReviewCount)</span>
+                                </div>
+                                <span>@item.LoaiMonAn.TenLoai</span>
+                            </div>
+
+                            <h3 class="text-lg font-bold text-gray-900 mb-1 group-hover:text-red-600 transition-colors truncate">
+                                <a asp-controller="Product" asp-action="Details" asp-route-id="@item.MaMonAn">
+                                @item.TenMonAn
+                                </a>
+                            </h3>
+
+                            <p class="text-gray-600 text-sm mb-3 line-clamp-2 flex-grow">
+                            @item.MoTa
+                            </p>
+
+                            <div class="flex items-center justify-between mt-auto">
+                                 <div class="flex items-baseline space-x-2">
+                                    <span class="text-xl font-bold text-red-600">@item.Gia.ToString("N0")đ</span>
+                                @if (item.OriginalPrice.HasValue)
+                                {
+                                            <span class="text-sm text-gray-400 line-through">@item.OriginalPrice.Value.ToString("N0")đ</span>
+                                }
+                                </div>
+                                <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                                    <input type="hidden" name="id" value="@item.MaMonAn" />
+                                    <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-red-700 transition-colors text-sm">
+                                        Thêm
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+            }
+        </div>
+
+        <div class="text-center mt-12">
+            <a asp-controller="Product" asp-action="Index" class="bg-red-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-red-700 transition-transform transform hover:scale-105 inline-block">
+                Xem Tất Cả Món Ăn
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Script to activate Lucide icons -->
+<script>
+    lucide.createIcons();
+</script>
