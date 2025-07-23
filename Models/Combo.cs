@@ -18,7 +18,6 @@ namespace ASM1.Models
         [Range(0, double.MaxValue)]
         public decimal Gia { get; set; }
 
-        // Cho phép thuộc tính HinhAnh có thể null
         public byte[]? HinhAnh { get; set; }
 
         public virtual ICollection<ChiTietCombo> ChiTietCombos { get; set; }
