@@ -23,13 +23,12 @@ namespace FastFoodApp.Controllers
             {
                 LoaiMonAns = await _context.LoaiMonAns.ToListAsync(),
 
-                // Cập nhật logic: Lấy các món ăn phổ biến và mới nhất
                 MonAns = await _context.MonAns
-                                       .Include(p => p.LoaiMonAn) // Include LoaiMonAn để hiển thị tên loại
+                                       .Include(p => p.LoaiMonAn) 
                                        .OrderByDescending(p => p.IsPopular)
                                        .ThenByDescending(p => p.IsNew)
                                        .ThenByDescending(p => p.Rating)
-                                       .Take(6) // Lấy 6 món nổi bật nhất
+                                       .Take(6) 
                                        .ToListAsync()
             };
 

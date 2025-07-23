@@ -24,7 +24,6 @@ namespace ASM1.Models
         [Phone]
         public string? SoDienThoai { get; set; }
 
-
         public DateTime? NgaySinh { get; set; }
         public int DiemTichLuy { get; set; } = 0;
 
@@ -36,8 +35,6 @@ namespace ASM1.Models
         [ForeignKey("MaCapThanhVien")]
         public virtual CapThanhVien CapThanhVien { get; set; }
 
-        // THÊM DÒNG NÀY
         public virtual ICollection<DiaChiNguoiDung> DiaChis { get; set; }
-        public string DiaChi { get; internal set; }
     }
 }

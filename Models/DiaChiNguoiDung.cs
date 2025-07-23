@@ -1,4 +1,4 @@
-﻿using ASM1.Models;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -7,22 +7,23 @@ public class DiaChiNguoiDung
     [Key]
     public int MaDiaChi { get; set; }
 
-    [Required]
-    public int MaNguoiDung { get; set; }
-    [ForeignKey("MaNguoiDung")]
-    public virtual NguoiDung NguoiDung { get; set; }
-
-    [Required(ErrorMessage = "Tên người nhận không được để trống")]
+    [Required(ErrorMessage = "Họ tên người nhận không được để trống")]
     [StringLength(100)]
     public string TenNguoiNhan { get; set; }
 
-    [Required(ErrorMessage = "Địa chỉ không được để trống")]
+    [Required(ErrorMessage = "Số điện thoại không được để trống")]
+    [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
+    public string SoDienThoai { get; set; }
+
+    [Required(ErrorMessage = "Địa chỉ cụ thể không được để trống")]
     [StringLength(255)]
     public string DiaChiCuThe { get; set; }
 
-    [Required(ErrorMessage = "Số điện thoại không được để trống")]
-    [Phone]
-    public string SoDienThoai { get; set; }
+    public bool IsDefault { get; set; }
 
-    public bool IsDefault { get; set; } = false;
+    public int MaNguoiDung { get; set; }
+    [ForeignKey("MaNguoiDung")]
+
+    [ValidateNever]
+    public virtual ASM1.Models.NguoiDung NguoiDung { get; set; }
 }

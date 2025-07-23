@@ -1,112 +1,117 @@
-﻿@model List<FastFoodApp.ViewModels.CartItemViewModel>
+﻿@model FastFoodApp.ViewModels.CartViewModel
 @{
     ViewData["Title"] = "Giỏ hàng";
-    var subtotal = Model.Sum(item => item.ThanhTien);
+    string FormatPrice(decimal price) => price.ToString("N0") + "đ";
 }
 
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Header -->
-        <div class="flex items-center mb-8 animate-fade-in">
-            <a asp-controller="Product" asp-action="Index" class="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
-                <i data-lucide="arrow-left" class="h-6 w-6 text-gray-600"></i>
-            </a>
-            <h1 class="text-2xl font-bold text-gray-900">
-                Giỏ hàng (@Model.Count món)
-            </h1>
-        </div>
+<div class="bg-gray-100 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        @if (!Model.Any())
+        @if (Model.CartItems.Any())
         {
-                <div class="text-center py-16 animate-zoom-in">
-                    <div class="text-6xl mb-6">🛒</div>
-                    <h2 class="text-2xl font-bold text-gray-900 mb-4">Giỏ hàng của bạn đang trống</h2>
-                    <p class="text-gray-600 mb-8">Hãy thêm một số món ngon vào giỏ hàng để bắt đầu đặt hàng.</p>
-                    <a asp-controller="Product" asp-action="Index" class="bg-red-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-red-700 transition-transform transform hover:scale-105 inline-block">
-                        Xem Thực Đơn
-                    </a>
+                <!-- Bố cục chính: 2 cột -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+                    <!-- CỘT BÊN TRÁI: DANH SÁCH SẢN PHẨM VÀ GỢI Ý -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <h1 class="text-4xl font-extrabold text-gray-900 tracking-tight">GIỎ HÀNG CỦA TÔI</h1>
+
+                        <!-- Card chứa các sản phẩm trong giỏ -->
+                        <div class="bg-white rounded-xl shadow-lg p-6 space-y-6">
+                        @foreach (var item in Model.CartItems)
+                        {
+                                    <div class="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 border-b pb-6 last:border-b-0 last:pb-0">
+                                        <img src="data:image/png;base64,@item.HinhAnh" alt="@item.TenSanPham" class="w-32 h-32 object-cover rounded-lg flex-shrink-0">
+
+                                        <div class="flex-grow text-center sm:text-left">
+                                            <p class="text-lg font-bold text-gray-800">@item.TenSanPham</p>
+                                            <div class="flex items-center justify-center sm:justify-start space-x-3 mt-2">
+                                                <a href="#" class="text-sm text-gray-600 hover:underline">Chỉnh sửa</a>
+                                                <span class="text-gray-300">|</span>
+                                                <form asp-action="RemoveCartItem" method="post" class="inline">
+                                                    <input type="hidden" name="itemId" value="@item.ItemId" />
+                                                    <input type="hidden" name="isCombo" value="@item.IsCombo.ToString()" />
+                                                    <button type="submit" class="text-sm text-gray-600 hover:underline">Xóa</button>
+                                                </form>
+                                            </div>
+                                        </div>
+
+                                        <div class="flex items-center space-x-4">
+                                             <form asp-action="UpdateCartItem" method="post" class="flex items-center">
+                                                 <input type="hidden" name="itemId" value="@item.ItemId" />
+                                                 <input type="hidden" name="isCombo" value="@item.IsCombo.ToString()" />
+                                                <button type="submit" name="quantity" value="@(item.SoLuong - 1)" class="w-8 h-8 rounded-full border text-lg font-bold flex items-center justify-center hover:bg-gray-100">-</button>
+                                                <input type="text" value="@item.SoLuong" readonly class="w-10 text-center font-bold border-none bg-transparent">
+                                                <button type="submit" name="quantity" value="@(item.SoLuong + 1)" class="w-8 h-8 rounded-full border text-lg font-bold flex items-center justify-center hover:bg-gray-100">+</button>
+                                            </form>
+                                            <p class="text-lg font-bold text-gray-900 w-24 text-right">@FormatPrice(item.ThanhTien)</p>
+                                        </div>
+                                    </div>
+                        }
+                        </div>
+
+                        <div class="bg-gray-800 text-white rounded-xl shadow-lg p-6">
+                            <h2 class="text-2xl font-bold mb-4">SẼ NGON HƠN KHI THƯỞNG THỨC CÙNG...</h2>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            @foreach (var p in Model.RecommendedProducts)
+                            {
+                                        <div class="relative bg-white text-gray-800 rounded-lg p-3 text-center">
+                                            <img src="data:image/png;base64,@(Convert.ToBase64String(p.HinhAnh ?? new byte[0]))" alt="@p.TenMonAn" class="w-full h-24 object-contain rounded-md mb-2">
+                                            <h3 class="font-semibold text-sm h-10">@p.TenMonAn</h3>
+                                            <p class="text-xs text-gray-500 mb-2">@FormatPrice(p.Gia)</p>
+                                             <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                                                <input type="hidden" name="id" value="@p.MaMonAn" />
+                                                <button type="submit" class="absolute -top-2 -right-2 w-7 h-7 bg-red-600 text-white rounded-full flex items-center justify-center text-xl font-bold hover:bg-red-700">+</button>
+                                            </form>
+                                        </div>
+                            }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CỘT BÊN PHẢI: TÓM TẮT ĐƠN HÀNG -->
+                    <div class="lg:col-span-1">
+                        <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8">
+                            <h2 class="text-xl font-bold text-gray-900 mb-4">@Model.CartItems.Sum(i => i.SoLuong) MÓN</h2>
+
+                            <div class="mb-4">
+                                 <p class="font-semibold mb-2">Bạn có Mã giảm giá?</p>
+                                 <div class="flex">
+                                     <input type="text" placeholder="Mã giảm giá *" class="flex-grow border border-gray-300 rounded-l-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                     <button class="bg-gray-800 text-white font-bold rounded-r-full px-6 py-2 hover:bg-black">Áp dụng</button>
+                                 </div>
+                            </div>
+
+                            <div class="border-t pt-4 space-y-2">
+                                <div class="flex justify-between">
+                                    <span>Tổng đơn hàng</span>
+                                    <span class="font-semibold">@FormatPrice(Model.Subtotal)</span>
+                                </div>
+                                 <div class="flex justify-between font-bold text-lg">
+                                    <span>Tổng thanh toán</span>
+                                    <span class="font-semibold">@FormatPrice(Model.Total)</span>
+                                </div>
+                            </div>
+
+                            <a asp-controller="Checkout" asp-action="Index" class="mt-6 w-full bg-red-600 text-white rounded-full py-3 text-center font-bold text-lg block hover:bg-red-700 transition-transform transform hover:scale-105">
+                                Thanh toán
+                            </a>
+                        </div>
+                    </div>
+
                 </div>
         }
         else
         {
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Cart Items -->
-                    <div class="lg:col-span-2">
-                        <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
-                            <div class="flex items-center justify-between mb-6">
-                                <h2 class="text-xl font-semibold">Món đã chọn</h2>
-                                <a asp-controller="Cart" asp-action="ClearCart" class="text-red-600 hover:text-red-700 text-sm font-medium">Xóa tất cả</a>
-                            </div>
-
-                            <form asp-controller="Cart" asp-action="UpdateCart" method="post">
-                                <div class="space-y-4">
-                                @for (int i = 0; i < Model.Count; i++)
-                                {
-                                    var item = Model[i];
-                                            <div class="flex items-center space-x-4 py-4 border-b border-gray-200 last:border-b-0">
-                                                <div class="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
-                                                    <img src="data:image/png;base64,@item.HinhAnh" alt="@item.TenSanPham" class="w-full h-full object-cover" />
-                                                </div>
-
-                                                <div class="flex-1">
-                                                    <h3 class="font-semibold text-gray-900">@item.TenSanPham</h3>
-                                                    <p class="text-sm text-gray-600">@item.DonGia.ToString("N0")đ</p>
-                                                </div>
-
-                                                <div class="flex items-center space-x-2">
-                                                    <input type="hidden" name="quantities[@i].Key" value="@item.MaMonAn" />
-                                                    <input type="number" name="quantities[@i].Value" value="@item.SoLuong" class="w-16 text-center border-gray-300 rounded-md" min="1" />
-                                                </div>
-
-                                                <div class="text-right font-semibold">
-                                            @item.ThanhTien.ToString("N0")đ
-                                                </div>
-
-                                                <form asp-controller="Cart" asp-action="RemoveFromCart" method="post" class="ml-4">
-                                                    <input type="hidden" name="id" value="@item.ItemId" />
-                                                    <input type="hidden" name="isCombo" value="@item.IsCombo.ToString()" />
-                                                    <button type="submit" class="p-2 text-gray-400 hover:text-red-600 rounded-full hover:bg-red-50 transition-colors">
-                                                        <i data-lucide="trash-2" class="h-5 w-5"></i>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                }
-                                </div>
-                                 <div class="text-right mt-6">
-                                    <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-600 transition-colors">Cập nhật giỏ hàng</button>
-                                </div>
-                            </form>
-                        </div>
+                <div class="text-center py-20 bg-white rounded-xl shadow-lg">
+                    <i data-lucide="shopping-cart" class="mx-auto h-24 w-24 text-gray-300"></i>
+                    <h2 class="mt-6 text-2xl font-bold text-gray-800">Giỏ hàng của bạn đang trống</h2>
+                    <p class="mt-2 text-gray-500">Hãy bắt đầu chọn những món ăn yêu thích nhé!</p>
+                    <div class="mt-8">
+                        <a asp-controller="Product" asp-action="Index" class="bg-red-600 text-white font-bold py-3 px-8 rounded-full hover:bg-red-700 transition-colors">
+                            Bắt đầu mua sắm
+                        </a>
                     </div>
-
-                    <!-- Order Summary -->
-                    <aside class="lg:col-span-1">
-                        <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8 animate-slide-up" style="animation-delay: 100ms;">
-                            <h2 class="text-xl font-semibold mb-4">Tóm tắt đơn hàng</h2>
-                            <div class="space-y-2 mb-4">
-                                <div class="flex justify-between">
-                                    <span>Tạm tính:</span>
-                                    <span>@subtotal.ToString("N0")đ</span>
-                                </div>
-                                <div class="flex justify-between">
-                                    <span>Phí giao hàng:</span>
-                                    <span class="text-green-600">Miễn phí</span>
-                                </div>
-                                <div class="border-t pt-2 mt-2">
-                                    <div class="flex justify-between font-bold text-lg">
-                                        <span>Tổng cộng:</span>
-                                        <span class="text-red-600">@subtotal.ToString("N0")đ</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <a asp-controller="Checkout" asp-action="Index" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center space-x-2">
-                                <i data-lucide="shopping-bag" class="h-5 w-5"></i>
-                                <span>Tiến hành đặt hàng</span>
-                            </a>
-                            <p class="text-xs text-gray-500 text-center mt-3">Giảm giá thành viên sẽ được áp dụng ở bước tiếp theo.</p>
-                        </div>
-                    </aside>
                 </div>
         }
     </div>

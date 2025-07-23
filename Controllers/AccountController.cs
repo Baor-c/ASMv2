@@ -102,6 +102,7 @@ namespace FastFoodApp.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+            TempData["ToastInfo"] = "Bạn đã đăng xuất.";
             return RedirectToAction("Index", "Home");
         }
 
@@ -109,13 +110,24 @@ namespace FastFoodApp.Controllers
         [HttpGet]
         public async Task<IActionResult> Profile()
         {
-            var userId = int.Parse(User.FindFirstValue("UserId"));
+            // SỬA LỖI: Kiểm tra giá trị UserId trước khi Parse
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                // Nếu không tìm thấy UserId, đăng xuất người dùng và chuyển hướng về trang đăng nhập
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ToastError"] = "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.";
+                return RedirectToAction("Login");
+            }
+
+            var userId = int.Parse(userIdString);
             var viewModel = await BuildProfileViewModel(userId);
 
             if (viewModel == null)
             {
+                // Trường hợp user đã bị xóa khỏi DB nhưng cookie vẫn còn
                 await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-                TempData["ErrorMessage"] = "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.";
+                TempData["ToastError"] = "Không tìm thấy thông tin người dùng.";
                 return RedirectToAction("Login");
             }
 
@@ -128,12 +140,6 @@ namespace FastFoodApp.Controllers
         public async Task<IActionResult> Profile(ProfileViewModel model)
         {
             var userId = int.Parse(User.FindFirstValue("UserId"));
-
-            if (string.IsNullOrEmpty(model.HoTen) || string.IsNullOrEmpty(model.SoDienThoai))
-            {
-                if (string.IsNullOrEmpty(model.HoTen)) ModelState.AddModelError("HoTen", "Họ tên không được để trống.");
-                if (string.IsNullOrEmpty(model.SoDienThoai)) ModelState.AddModelError("SoDienThoai", "Số điện thoại không được để trống.");
-            }
 
             if (!ModelState.IsValid)
             {
@@ -153,7 +159,7 @@ namespace FastFoodApp.Controllers
 
             _context.Update(user);
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Cập nhật thông tin thành công!";
+            TempData["ToastSuccess"] = "Cập nhật thông tin thành công!";
 
             return RedirectToAction(nameof(Profile));
         }
@@ -179,15 +185,11 @@ namespace FastFoodApp.Controllers
 
                 _context.DiaChiNguoiDungs.Add(newAddress);
                 await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Thêm địa chỉ mới thành công!";
+                TempData["ToastSuccess"] = "Thêm địa chỉ mới thành công!";
             }
             else
             {
-                var errorList = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToArray();
-                TempData["ErrorMessages"] = errorList;
-                TempData["InvalidAddress_TenNguoiNhan"] = newAddress.TenNguoiNhan;
-                TempData["InvalidAddress_SoDienThoai"] = newAddress.SoDienThoai;
-                TempData["InvalidAddress_DiaChiCuThe"] = newAddress.DiaChiCuThe;
+                TempData["ToastError"] = "Thêm địa chỉ thất bại. Vui lòng kiểm tra lại thông tin.";
             }
 
             return RedirectToAction("Profile");
@@ -200,13 +202,122 @@ namespace FastFoodApp.Controllers
         {
             var userId = int.Parse(User.FindFirstValue("UserId"));
             var address = await _context.DiaChiNguoiDungs.FirstOrDefaultAsync(a => a.MaDiaChi == id && a.MaNguoiDung == userId);
+
             if (address != null)
             {
-                _context.DiaChiNguoiDungs.Remove(address);
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Đã xóa địa chỉ.";
+                if (address.IsDefault)
+                {
+                    TempData["ToastWarning"] = "Không thể xóa địa chỉ mặc định.";
+                }
+                else
+                {
+                    _context.DiaChiNguoiDungs.Remove(address);
+                    await _context.SaveChangesAsync();
+                    TempData["ToastSuccess"] = "Đã xóa địa chỉ.";
+                }
             }
             return RedirectToAction("Profile");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetDefaultAddress(int id)
+        {
+            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var userAddresses = await _context.DiaChiNguoiDungs
+                                              .Where(a => a.MaNguoiDung == userId)
+                                              .ToListAsync();
+
+            if (!userAddresses.Any(a => a.MaDiaChi == id))
+            {
+                return NotFound();
+            }
+
+            foreach (var addr in userAddresses)
+            {
+                addr.IsDefault = (addr.MaDiaChi == id);
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["ToastSuccess"] = "Đã cập nhật địa chỉ mặc định.";
+            return RedirectToAction("Profile");
+        }
+
+        [AllowAnonymous]
+        public IActionResult ExternalLogin(string provider, string returnUrl = null)
+        {
+            var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
+            var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
+            return Challenge(properties, provider);
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
+        {
+            if (remoteError != null)
+            {
+                TempData["ToastError"] = $"Lỗi từ nhà cung cấp ngoài: {remoteError}";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var info = await HttpContext.AuthenticateAsync("Google");
+            if (info?.Principal == null)
+            {
+                return RedirectToAction(nameof(Login));
+            }
+
+            var email = info.Principal.FindFirstValue(ClaimTypes.Email);
+            var name = info.Principal.FindFirstValue(ClaimTypes.Name);
+
+            if (email == null)
+            {
+                TempData["ToastError"] = "Không thể lấy thông tin email từ Google.";
+                return RedirectToAction(nameof(Login));
+            }
+
+            var user = await _context.NguoiDungs.Include(u => u.VaiTro).FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                user = new NguoiDung
+                {
+                    Email = email,
+                    HoTen = name,
+                    MaVaiTro = 2,
+                    MaCapThanhVien = 1,
+                    DiemTichLuy = 0,
+                    DiaChis = new List<DiaChiNguoiDung>
+                    {
+                        new DiaChiNguoiDung
+                        {
+                            TenNguoiNhan = name,
+                            SoDienThoai = "Chưa cập nhật",
+                            DiaChiCuThe = "Chưa cập nhật",
+                            IsDefault = true
+                        }
+                    }
+                };
+                _context.NguoiDungs.Add(user);
+                await _context.SaveChangesAsync();
+                user = await _context.NguoiDungs.Include(u => u.VaiTro).FirstAsync(u => u.Email == email);
+            }
+
+            await SignInUser(user);
+            TempData["ToastSuccess"] = $"Chào mừng {user.HoTen}!";
+            return RedirectToAction("Index", "Home");
+        }
+
+        private async Task SignInUser(NguoiDung user)
+        {
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.Name, user.HoTen),
+                new Claim("UserId", user.MaNguoiDung.ToString()),
+                new Claim(ClaimTypes.Role, user.VaiTro.TenVaiTro)
+            };
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var authProperties = new AuthenticationProperties { IsPersistent = true };
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
         }
 
         private async Task<ProfileViewModel> BuildProfileViewModel(int userId)
@@ -256,18 +367,10 @@ namespace FastFoodApp.Controllers
                 NewAddress = new DiaChiNguoiDung()
             };
         }
+    }
 
-        private async Task SignInUser(NguoiDung user)
-        {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.HoTen),
-                new Claim("UserId", user.MaNguoiDung.ToString()),
-                new Claim(ClaimTypes.Role, user.VaiTro.TenVaiTro)
-            };
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            var authProperties = new AuthenticationProperties { IsPersistent = true };
-            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
-        }
+    public class AddressPayload
+    {
+        public string Address { get; set; }
     }
 }

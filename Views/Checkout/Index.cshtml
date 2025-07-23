@@ -1,166 +1,178 @@
 ﻿@model FastFoodApp.ViewModels.CheckoutViewModel
 @{
-    ViewData["Title"] = "Thanh toán";
-    var defaultAddress = Model.Addresses.FirstOrDefault(a => a.MaDiaChi == Model.SelectedAddressId);
+    ViewData["Title"] = "Xác nhận đơn hàng";
+    string FormatPrice(decimal price) => price.ToString("N0") + "đ";
 }
 
+<!-- Vùng chứa Popup sẽ được load vào đây -->
+<div id="modal-container"></div>
+
 <div class="min-h-screen bg-gray-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div class="text-center mb-10">
-            <h1 class="text-3xl font-bold text-gray-900">Xác nhận đơn hàng</h1>
-            <p class="text-gray-600 mt-2">Vui lòng kiểm tra lại thông tin trước khi hoàn tất đặt hàng.</p>
+    <div class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div class="text-center mb-8 animate-fade-in">
+            <h1 class="text-3xl sm:text-4xl font-bold text-gray-900">Xác nhận đơn hàng</h1>
+            <p class="mt-2 text-lg text-gray-600">Vui lòng kiểm tra lại thông tin trước khi hoàn tất đặt hàng.</p>
         </div>
 
-        <form asp-controller="Checkout" asp-action="Index" method="post">
+        <form asp-action="Index" method="post">
             @Html.AntiForgeryToken()
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                <!-- Left Column: Shipping & Payment -->
-                <div class="lg:col-span-2 space-y-8">
-                    <!-- Shipping Information -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
+                <!-- Cột trái: Chi tiết -->
+                <div class="lg:col-span-3 space-y-8">
+                    <!-- Thẻ địa chỉ -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up">
                         <div class="flex justify-between items-center mb-4">
-                             <h3 class="text-xl font-bold text-gray-900 flex items-center">
-                                <i data-lucide="map-pin" class="w-6 h-6 mr-3 text-red-600"></i>
+                            <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                                <i data-lucide="map-pin" class="h-6 w-6 mr-3 text-red-500"></i>
                                 Địa Chỉ Nhận Hàng
-                            </h3>
-                            <button type="button" id="change-address-btn" class="text-red-600 font-semibold hover:underline">Thay Đổi</button>
+                            </h2>
+                            <button type="button" id="change-address-btn" class="font-semibold text-red-600 hover:text-red-800 text-sm">
+                                Thay Đổi
+                            </button>
                         </div>
 
-                        @if (defaultAddress != null)
-                        {
-                                <div id="selected-address-display">
+                        <div id="selected-address-display" class="border-l-4 border-red-500 pl-4 py-2">
+                            @if (Model.Addresses.Any())
+                            {
+                                var defaultAddress = Model.Addresses.FirstOrDefault(a => a.MaDiaChi == Model.SelectedAddressId) ?? Model.Addresses.First();
                                     <p class="font-bold">@defaultAddress.TenNguoiNhan - @defaultAddress.SoDienThoai</p>
-                                    <p class="text-gray-600">@defaultAddress.DiaChiCuThe</p>
-                                </div>
-                        }
-                        <input type="hidden" asp-for="SelectedAddressId" id="selected-address-id-input" />
-                        <span asp-validation-for="SelectedAddressId" class="text-red-500 text-sm"></span>
+                                    <p class="text-gray-600 text-sm">@defaultAddress.DiaChiCuThe</p>
+                                    <input type="hidden" asp-for="SelectedAddressId" id="hiddenSelectedAddressId" value="@defaultAddress.MaDiaChi" />
+                            }
+                            else
+                            {
+                                    <p class="text-red-500">Vui lòng thêm địa chỉ trong trang cá nhân.</p>
+                            }
+                        </div>
+                        <span asp-validation-for="SelectedAddressId" class="text-red-500 text-sm mt-2"></span>
                     </div>
 
-                    <!-- Payment Method -->
-                    <div class="bg-white rounded-xl shadow-lg p-6">
-                        <h3 class="text-xl font-bold text-gray-900 mb-6">Phương thức thanh toán</h3>
-                        <div class="space-y-3">
-                            <label class="flex items-center p-4 border border-gray-300 rounded-lg cursor-pointer has-[:checked]:bg-red-50 has-[:checked]:border-red-500">
-                                <input type="radio" name="paymentMethod" value="cash" class="h-4 w-4 text-red-600 focus:ring-red-500" checked />
-                                <span class="ml-4 font-medium">Thanh toán khi nhận hàng (COD)</span>
+                    <!-- Thẻ phương thức thanh toán -->
+                    <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up" style="animation-delay: 100ms;">
+                         <h2 class="text-xl font-bold text-gray-800 flex items-center mb-4">
+                            <i data-lucide="credit-card" class="h-6 w-6 mr-3 text-red-500"></i>
+                            Phương thức thanh toán
+                        </h2>
+                        <div class="border border-red-500 rounded-lg p-4">
+                            <label class="flex items-center cursor-pointer">
+                                <input type="radio" name="paymentMethod" checked class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" />
+                                <span class="ml-3 font-semibold text-gray-700">Thanh toán khi nhận hàng (COD)</span>
                             </label>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: Order Summary -->
-                <aside class="lg:col-span-1">
-                    <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8">
-                        <h3 class="text-xl font-bold text-gray-900 mb-6 text-center">Tóm tắt đơn hàng</h3>
-                        <div class="space-y-4 max-h-64 overflow-y-auto pr-2">
+                <!-- Cột phải: Tóm tắt đơn hàng -->
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-lg p-6 sticky top-8 animate-slide-up" style="animation-delay: 200ms;">
+                        <h2 class="text-xl font-bold text-gray-900 mb-4 border-b pb-3">Tóm tắt đơn hàng</h2>
+                        <div class="space-y-4 max-h-80 overflow-y-auto pr-2">
                             @foreach (var item in Model.CartItems)
                             {
                                     <div class="flex items-center space-x-4">
-                                        <div class="w-16 h-16 rounded-lg overflow-hidden relative">
+                                        <div class="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
                                             <img src="data:image/png;base64,@item.HinhAnh" alt="@item.TenSanPham" class="w-full h-full object-cover">
-                                            <span class="absolute -top-2 -right-2 bg-gray-800 text-white text-xs w-6 h-6 flex items-center justify-center rounded-full">@item.SoLuong</span>
                                         </div>
-                                        <div class="flex-1">
-                                            <p class="font-semibold text-gray-800 text-sm">@item.TenSanPham</p>
+                                        <div class="flex-grow">
+                                            <p class="font-semibold text-gray-800 line-clamp-1">@item.TenSanPham</p>
+                                            <p class="text-sm text-gray-500">SL: @item.SoLuong</p>
                                         </div>
-                                        <p class="font-medium text-gray-700 text-sm">@item.ThanhTien.ToString("N0")đ</p>
+                                        <p class="font-semibold text-gray-900">@FormatPrice(item.ThanhTien)</p>
                                     </div>
                             }
                         </div>
-                        <div class="border-t my-6"></div>
-                        <div class="space-y-3 text-sm">
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Tạm tính</span>
-                                <span class="font-medium">@Model.TongTienGoc.ToString("N0")đ</span>
+                        <div class="mt-6 pt-4 border-t space-y-2">
+                            <div class="flex justify-between text-gray-600">
+                                <span>Tạm tính</span>
+                                <span>@FormatPrice(Model.TongTienGoc)</span>
                             </div>
-                            <div class="flex justify-between">
-                                <span class="text-gray-600">Giảm giá (@Model.PhanTramGiamGia%)</span>
-                                <span class="font-medium text-green-600">-@Model.SoTienGiam.ToString("N0")đ</span>
+                            <div class="flex justify-between text-gray-600">
+                                <span>Giảm giá (@Model.PhanTramGiamGia%)</span>
+                                <span class="text-green-600 font-semibold">-@FormatPrice(Model.SoTienGiam)</span>
+                            </div>
+                            <div class="flex justify-between font-bold text-xl text-gray-900 pt-2 border-t mt-2">
+                                <span>Tổng cộng</span>
+                                <span class="text-red-600">@FormatPrice(Model.TongTienThanhToan)</span>
                             </div>
                         </div>
-                        <div class="border-t my-6"></div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-lg font-bold text-gray-900">Tổng cộng</span>
-                            <span class="text-2xl font-bold text-red-600">@Model.TongTienThanhToan.ToString("N0")đ</span>
-                        </div>
-                        <div class="mt-8">
-                            <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors">Xác nhận và Đặt hàng</button>
+                        <div class="mt-6">
+                            <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg text-lg font-semibold hover:bg-red-700 transition-transform transform hover:scale-105">
+                                Xác nhận và Đặt hàng
+                            </button>
                         </div>
                     </div>
-                </aside>
+                </div>
             </div>
         </form>
     </div>
 </div>
 
-<!-- Partial View cho Popup chọn địa chỉ -->
-<div id="address-popup-overlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4 hidden">
-    <div id="address-popup" class="bg-white rounded-lg max-w-md w-full transform scale-95 opacity-0 transition-all duration-300">
-        <div class="flex items-center justify-between p-4 border-b">
-            <h2 class="text-lg font-semibold text-gray-900">Địa Chỉ Của Tôi</h2>
-            <button id="close-address-popup" class="p-1 hover:bg-gray-100 rounded-full transition-colors"><i data-lucide="x" class="h-5 w-5"></i></button>
-        </div>
-        <div class="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
-            @foreach (var address in Model.Addresses)
-            {
-                    <label class="flex items-start p-4 border rounded-lg cursor-pointer has-[:checked]:bg-red-50 has-[:checked]:border-red-500">
-                        <input type="radio" name="address-option" value="@address.MaDiaChi" data-display-html="<p class='font-bold'>@address.TenNguoiNhan - @address.SoDienThoai</p><p class='text-gray-600'>@address.DiaChiCuThe</p>" class="h-5 w-5 text-red-600 mt-1" @(Model.SelectedAddressId == address.MaDiaChi ? "checked" : "") />
-                        <div class="ml-4">
-                            <p class="font-semibold">@address.TenNguoiNhan (@address.SoDienThoai)</p>
-                            <p class="text-sm text-gray-600">@address.DiaChiCuThe</p>
-                        </div>
-                    </label>
-            }
-        </div>
-        <div class="p-4 bg-gray-50 border-t flex justify-end space-x-2">
-            <button id="cancel-address-change" type="button" class="px-4 py-2 border rounded-lg hover:bg-gray-200">Hủy</button>
-            <button id="confirm-address-change" type="button" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Xác nhận</button>
-        </div>
-    </div>
-</div>
-
-
 @section Scripts {
         <script>
-            lucide.createIcons();
-
             document.addEventListener('DOMContentLoaded', function() {
+                lucide.createIcons();
+
+                const modalContainer = document.getElementById('modal-container');
                 const changeAddressBtn = document.getElementById('change-address-btn');
-                const addressPopupOverlay = document.getElementById('address-popup-overlay');
-                const addressPopup = document.getElementById('address-popup');
-                const closePopupBtn = document.getElementById('close-address-popup');
-                const cancelBtn = document.getElementById('cancel-address-change');
-                const confirmBtn = document.getElementById('confirm-address-change');
-                const selectedAddressDisplay = document.getElementById('selected-address-display');
-                const selectedAddressIdInput = document.getElementById('selected-address-id-input');
 
-                function openPopup() {
-                    addressPopupOverlay.classList.remove('hidden');
-                    setTimeout(() => addressPopup.classList.remove('scale-95', 'opacity-0'), 10);
+                if(changeAddressBtn) {
+                    changeAddressBtn.addEventListener('click', async function() {
+                        const response = await fetch('@Url.Action("GetAddressSelectionModal", "Checkout")');
+                        modalContainer.innerHTML = await response.text();
+                        setupModalEventListeners();
+                        const overlay = document.getElementById('address-modal-overlay');
+                        const modal = document.getElementById('address-modal');
+                        overlay.style.display = 'flex'; // Hiển thị overlay
+                        setTimeout(() => modal.classList.remove('scale-95', 'opacity-0'), 10);
+                    });
                 }
 
-                function closePopup() {
-                    addressPopup.classList.add('scale-95', 'opacity-0');
-                    setTimeout(() => addressPopupOverlay.classList.add('hidden'), 300);
-                }
+                function setupModalEventListeners() {
+                    const overlay = document.getElementById('address-modal-overlay');
+                    const modal = document.getElementById('address-modal');
+                    const form = document.getElementById('address-selection-form');
+                    const cancelBtn = document.getElementById('cancel-address-selection');
+                    const confirmBtn = form.querySelector('button[type="submit"]');
+                    const radios = form.querySelectorAll('input[type="radio"]');
 
-                changeAddressBtn.addEventListener('click', openPopup);
-                closePopupBtn.addEventListener('click', closePopup);
-                cancelBtn.addEventListener('click', closePopup);
-                addressPopupOverlay.addEventListener('click', (e) => {
-                    if(e.target === addressPopupOverlay) closePopup();
-                });
-
-                confirmBtn.addEventListener('click', () => {
-                    const selectedRadio = document.querySelector('input[name="address-option"]:checked');
-                    if (selectedRadio) {
-                        selectedAddressIdInput.value = selectedRadio.value;
-                        selectedAddressDisplay.innerHTML = selectedRadio.dataset.displayHtml;
+                    function closeModal() {
+                        modal.classList.add('scale-95', 'opacity-0');
+                        setTimeout(() => {
+                            overlay.remove();
+                        }, 300);
                     }
-                    closePopup();
-                });
+
+                    cancelBtn.addEventListener('click', closeModal);
+                    document.getElementById('close-address-modal').addEventListener('click', closeModal);
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) closeModal();
+                    });
+
+                    // Kích hoạt nút xác nhận khi có lựa chọn
+                    radios.forEach(radio => {
+                        radio.addEventListener('change', () => {
+                            confirmBtn.disabled = false;
+                        });
+                    });
+
+                    form.addEventListener('submit', function(e) {
+                        e.preventDefault();
+                        const selectedRadio = form.querySelector('input[name="selectedAddressIdModal"]:checked');
+                        if (selectedRadio) {
+                            document.getElementById('hiddenSelectedAddressId').value = selectedRadio.value;
+
+                            const addressDisplayDiv = document.getElementById('selected-address-display');
+                            addressDisplayDiv.innerHTML = `
+                                <p class="font-bold">${selectedRadio.dataset.name} - ${selectedRadio.dataset.phone}</p>
+                                <p class="text-gray-600 text-sm">${selectedRadio.dataset.details}</p>
+                                <input type="hidden" name="SelectedAddressId" id="hiddenSelectedAddressId" value="${selectedRadio.value}" />
+                            `;
+
+                            toastr.success('Đã cập nhật địa chỉ nhận hàng.');
+                        }
+                        closeModal();
+                    });
+                }
             });
         </script>
 }

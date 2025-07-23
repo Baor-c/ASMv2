@@ -27,6 +27,7 @@ namespace FastFoodApp.Controllers
         List<CartItemViewModel> Carts => HttpContext.Session.Get<List<CartItemViewModel>>(CARTKEY) ?? new List<CartItemViewModel>();
 
         [HttpGet]
+        [HttpGet]
         public async Task<IActionResult> Index()
         {
             var gioHang = Carts;
@@ -40,7 +41,7 @@ namespace FastFoodApp.Controllers
 
             if (!userAddresses.Any())
             {
-                TempData["ErrorMessage"] = "Bạn cần thêm địa chỉ giao hàng trong trang cá nhân trước khi đặt hàng.";
+                TempData["ToastWarning"] = "Bạn cần thêm địa chỉ giao hàng trước khi đặt hàng.";
                 return RedirectToAction("Profile", "Account");
             }
 
@@ -55,6 +56,7 @@ namespace FastFoodApp.Controllers
             var model = new CheckoutViewModel
             {
                 Addresses = userAddresses,
+                // Chọn địa chỉ mặc định, nếu không có thì chọn cái đầu tiên
                 SelectedAddressId = userAddresses.FirstOrDefault(a => a.IsDefault)?.MaDiaChi ?? userAddresses.First().MaDiaChi,
                 CartItems = gioHang,
                 TongTienGoc = tongTienGoc,
@@ -68,88 +70,94 @@ namespace FastFoodApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index(CheckoutViewModel model)
+        public async Task<IActionResult> Index(CheckoutSubmitModel model)
         {
+            if (!ModelState.IsValid)
+            {
+                TempData["ToastError"] = "Vui lòng chọn địa chỉ nhận hàng.";
+                return RedirectToAction("Index"); 
+            }
+
             var userId = int.Parse(User.FindFirstValue("UserId"));
             var gioHang = Carts;
 
-            if (gioHang.Count == 0) return RedirectToAction("Index", "Cart");
-            if (model.SelectedAddressId == 0) ModelState.AddModelError("SelectedAddressId", "Vui lòng chọn một địa chỉ giao hàng.");
-
-            if (ModelState.IsValid)
+            if (gioHang.Count == 0)
             {
-                var user = await _context.NguoiDungs.Include(u => u.CapThanhVien).FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
-                var selectedAddress = await _context.DiaChiNguoiDungs.FirstOrDefaultAsync(a => a.MaDiaChi == model.SelectedAddressId && a.MaNguoiDung == userId);
-                if (user == null || selectedAddress == null) return NotFound();
+                TempData["ToastWarning"] = "Giỏ hàng của bạn đã trống.";
+                return RedirectToAction("Index", "Cart");
+            }
 
-                using (var transaction = await _context.Database.BeginTransactionAsync())
+            var user = await _context.NguoiDungs.Include(u => u.CapThanhVien).FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
+            var selectedAddress = await _context.DiaChiNguoiDungs.FirstOrDefaultAsync(a => a.MaDiaChi == model.SelectedAddressId && a.MaNguoiDung == userId);
+
+            if (user == null || selectedAddress == null)
+            {
+                return NotFound();
+            }
+
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
                 {
-                    try
+                    var tongTienGoc = gioHang.Sum(p => p.ThanhTien);
+                    var phanTramGiamGia = user.CapThanhVien?.PhanTramGiamGia ?? 0;
+                    var soTienGiam = (decimal)(phanTramGiamGia / 100) * tongTienGoc;
+                    var tongTienThanhToan = tongTienGoc - soTienGiam;
+
+                    var hoaDon = new HoaDon
                     {
-                        var tongTienGoc = gioHang.Sum(p => p.ThanhTien);
-                        var phanTramGiamGia = user.CapThanhVien?.PhanTramGiamGia ?? 0;
-                        var soTienGiam = (decimal)(phanTramGiamGia / 100) * tongTienGoc;
-                        var tongTienThanhToan = tongTienGoc - soTienGiam;
+                        MaNguoiDung = userId,
+                        NgayDat = DateTime.Now,
+                        DiaChiGiaoHang = $"{selectedAddress.TenNguoiNhan}, {selectedAddress.SoDienThoai}, {selectedAddress.DiaChiCuThe}",
+                        TrangThai = "Chờ xử lý",
+                        TongTien = tongTienThanhToan
+                    };
+                    _context.Add(hoaDon);
+                    await _context.SaveChangesAsync();
 
-                        var hoaDon = new HoaDon
-                        {
-                            MaNguoiDung = userId,
-                            NgayDat = DateTime.Now,
-                            DiaChiGiaoHang = selectedAddress.DiaChiCuThe, // Sử dụng địa chỉ đã chọn
-                            TrangThai = "Chờ xử lý",
-                            TongTien = tongTienThanhToan
-                        };
-                        _context.Add(hoaDon);
-                        await _context.SaveChangesAsync();
-
-                        foreach (var item in gioHang)
-                        {
-                            var chiTiet = new ChiTietHoaDon { MaHoaDon = hoaDon.MaHoaDon, SoLuong = item.SoLuong, DonGia = item.DonGia, MaCombo = item.IsCombo ? item.ItemId : (int?)null, MaMonAn = !item.IsCombo ? item.ItemId : (int?)null };
-                            _context.Add(chiTiet);
-                        }
-
-                        int diemCongThem = (int)(tongTienThanhToan / 10000);
-                        user.DiemTichLuy += diemCongThem;
-
-                        var capThanhVienMoi = await _context.CapThanhViens.Where(c => c.NguongDiem <= user.DiemTichLuy).OrderByDescending(c => c.NguongDiem).FirstOrDefaultAsync();
-                        if (capThanhVienMoi != null && capThanhVienMoi.MaCapThanhVien != user.MaCapThanhVien)
-                        {
-                            user.MaCapThanhVien = capThanhVienMoi.MaCapThanhVien;
-                        }
-
-                        _context.Update(user);
-                        await _context.SaveChangesAsync();
-                        await transaction.CommitAsync();
-                        HttpContext.Session.Remove(CARTKEY);
-
-                        return RedirectToAction("OrderSuccess", new { id = hoaDon.MaHoaDon });
-                    }
-                    catch (Exception)
+                    foreach (var item in gioHang)
                     {
-                        await transaction.RollbackAsync();
-                        ModelState.AddModelError("", "Đã có lỗi xảy ra trong quá trình đặt hàng. Vui lòng thử lại.");
+                        var chiTiet = new ChiTietHoaDon { MaHoaDon = hoaDon.MaHoaDon, SoLuong = item.SoLuong, DonGia = item.DonGia, MaCombo = item.IsCombo ? item.ItemId : (int?)null, MaMonAn = !item.IsCombo ? item.ItemId : (int?)null };
+                        _context.Add(chiTiet);
                     }
+
+                    int diemCongThem = (int)(tongTienThanhToan / 10000);
+                    user.DiemTichLuy += diemCongThem;
+
+                    var capThanhVienMoi = await _context.CapThanhViens.Where(c => c.NguongDiem <= user.DiemTichLuy).OrderByDescending(c => c.NguongDiem).FirstOrDefaultAsync();
+                    if (capThanhVienMoi != null && capThanhVienMoi.MaCapThanhVien != user.MaCapThanhVien)
+                    {
+                        user.MaCapThanhVien = capThanhVienMoi.MaCapThanhVien;
+                    }
+
+                    _context.Update(user);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    HttpContext.Session.Remove(CARTKEY);
+
+                    TempData["ToastSuccess"] = "Đặt hàng thành công!";
+                    return RedirectToAction("OrderSuccess", new { id = hoaDon.MaHoaDon });
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ToastError"] = "Đã có lỗi xảy ra trong quá trình đặt hàng. Vui lòng thử lại.";
                 }
             }
 
-            // Nếu model không hợp lệ, tạo lại ViewModel đầy đủ để trả về View
-            var userForViewModel = await _context.NguoiDungs.Include(u => u.CapThanhVien).AsNoTracking().FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
-            var userAddresses = await _context.DiaChiNguoiDungs.Where(a => a.MaNguoiDung == userId).AsNoTracking().ToListAsync();
-
-            var tongTienGocKhiLoi = gioHang.Sum(p => p.ThanhTien);
-            var phanTramGiamGiaKhiLoi = userForViewModel.CapThanhVien?.PhanTramGiamGia ?? 0;
-            var soTienGiamKhiLoi = (decimal)(phanTramGiamGiaKhiLoi / 100) * tongTienGocKhiLoi;
-
-            model.Addresses = userAddresses;
-            model.CartItems = gioHang;
-            model.TongTienGoc = tongTienGocKhiLoi;
-            model.PhanTramGiamGia = phanTramGiamGiaKhiLoi;
-            model.SoTienGiam = soTienGiamKhiLoi;
-            model.TongTienThanhToan = tongTienGocKhiLoi - soTienGiamKhiLoi;
-
-            return View(model);
+            return RedirectToAction("Index");
         }
 
+        [HttpGet]
+        public async Task<IActionResult> GetAddressSelectionModal()
+        {
+            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var userAddresses = await _context.DiaChiNguoiDungs
+                                              .Where(a => a.MaNguoiDung == userId)
+                                              .AsNoTracking()
+                                              .ToListAsync();
+            return PartialView("_AddressSelectionModal", userAddresses);
+        }
         [HttpGet]
         public async Task<IActionResult> OrderSuccess(int id)
         {

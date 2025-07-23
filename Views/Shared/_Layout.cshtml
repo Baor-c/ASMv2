@@ -1,5 +1,6 @@
 ﻿@using System.Security.Claims
 @using Microsoft.AspNetCore.Http
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -7,18 +8,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - FastBite</title>
 
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Custom CSS -->
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <!-- Local CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
-    <!-- Lucide Icons -->
+    <!-- External JS -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body class="bg-gray-50">
@@ -109,49 +111,59 @@
                 </div>
             </div>
             <div class="border-t border-gray-800 mt-8 pt-8 text-center">
-                <p class="text-gray-400 text-sm">&copy; 2024 FastBite - All Rights Reserved.</p>
+                <p class="text-gray-400 text-sm">© @DateTime.Now.Year FastBite - All Rights Reserved.</p>
             </div>
         </div>
     </footer>
 
     @await Html.PartialAsync("_LocationPopup")
 
+    <!-- Scripts -->
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 
     <script>
+        // Cấu hình Toastr
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-bottom-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+        // Hàm chung để hiển thị Toast từ TempData
+        function showToastFromTempData() {
+            var successMessage = '@Html.Raw(TempData["ToastSuccess"])';
+            if (successMessage) toastr.success(successMessage);
+
+            var errorMessage = '@Html.Raw(TempData["ToastError"])';
+            if (errorMessage) toastr.error(errorMessage);
+
+            var infoMessage = '@Html.Raw(TempData["ToastInfo"])';
+            if (infoMessage) toastr.info(infoMessage);
+
+            var warningMessage = '@Html.Raw(TempData["ToastWarning"])';
+            if (warningMessage) toastr.warning(warningMessage);
+        }
+
+        // Script chính của trang
         document.addEventListener('DOMContentLoaded', function () {
-            // Cập nhật số lượng giỏ hàng khi trang vừa tải xong
+
+            showToastFromTempData();
             updateCartCount();
 
-            // Lắng nghe sự kiện submit trên toàn bộ trang
-            document.body.addEventListener('submit', function(event) {
-                if (event.target.matches('.ajax-add-to-cart-form')) {
-                    event.preventDefault();
-                    const form = event.target;
-                    const formData = new FormData(form);
-
-                    fetch(form.action, {
-                        method: 'POST',
-                        body: new URLSearchParams(formData)
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            updateCartCount(data.cartCount);
-                            showToast(data.message || 'Đã thêm vào giỏ!');
-                        } else {
-                            showToast(data.message || 'Có lỗi xảy ra', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showToast('Không thể kết nối đến máy chủ', 'error');
-                    });
-                }
-            });
-
-            // LOGIC CHO POPUP ĐỊA CHỈ
+            // LOGIC POPUP ĐỊA CHỈ
             const locationPopupOverlay = document.getElementById('location-popup-overlay');
             const locationPopup = document.getElementById('location-popup');
             const openPopupBtn = document.getElementById('location-selector-btn');
@@ -163,7 +175,7 @@
             const popupLocationText = popupLocationResult.querySelector('p');
             const popupSelectLocationBtn = document.getElementById('popup-select-current-location');
 
-            if(openPopupBtn) {
+            if (openPopupBtn) {
                 openPopupBtn.addEventListener('click', () => {
                     locationPopupOverlay.classList.remove('hidden');
                     setTimeout(() => locationPopup.classList.remove('scale-95', 'opacity-0'), 10);
@@ -175,19 +187,19 @@
                 locationPopup.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => locationPopupOverlay.classList.add('hidden'), 300);
             }
-            if(closePopupBtn) closePopupBtn.addEventListener('click', closePopup);
-            if(locationPopupOverlay) locationPopupOverlay.addEventListener('click', (e) => {
+            if (closePopupBtn) closePopupBtn.addEventListener('click', closePopup);
+            if (locationPopupOverlay) locationPopupOverlay.addEventListener('click', (e) => {
                 if (e.target === locationPopupOverlay) closePopup();
             });
 
             function loadSavedAddresses() {
-                if(!savedAddressesList) return;
+                if (!savedAddressesList) return;
                 savedAddressesList.innerHTML = '<div class="text-center text-gray-500 py-4">Đang tải...</div>';
                 fetch('@Url.Action("GetUserAddressesJson", "Account")')
                     .then(response => {
                         if (response.status === 401) {
-                           savedAddressesList.innerHTML = '<p class="text-sm text-gray-500 text-center">Vui lòng <a href="/Account/Login" class="text-red-600 underline">đăng nhập</a> để xem địa chỉ đã lưu.</p>';
-                           return null;
+                            savedAddressesList.innerHTML = '<p class="text-sm text-gray-500 text-center">Vui lòng <a href="/Account/Login" class="text-red-600 underline">đăng nhập</a> để xem địa chỉ đã lưu.</p>';
+                            return null;
                         }
                         return response.json();
                     })
@@ -215,8 +227,8 @@
             }
 
             function selectAddress(address) {
-                if(addressDisplay) addressDisplay.textContent = address;
-                fetch('@Url.Action("SetCurrentAddress", "Account")', {
+                if (addressDisplay) addressDisplay.textContent = address;
+                fetch('@Url.Action("SetCurrentAddress", "Home")', { // Cần có action này trong HomeController
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ address: address })
@@ -225,7 +237,7 @@
             }
 
             if (popupGetLocationBtn) {
-                popupGetLocationBtn.addEventListener('click', function() {
+                popupGetLocationBtn.addEventListener('click', function () {
                     const originalButtonHTML = this.innerHTML;
                     if (navigator.geolocation) {
                         this.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-red-700 mx-auto"></div>';
@@ -243,10 +255,10 @@
                                             popupLocationText.textContent = data.display_name;
                                             popupLocationResult.classList.remove('hidden');
                                         } else {
-                                            showToast('Không thể tìm thấy địa chỉ từ vị trí này.', 'error');
+                                            toastr.error('Không thể tìm thấy địa chỉ từ vị trí này.');
                                         }
                                     })
-                                    .catch(err => showToast('Lỗi khi lấy thông tin địa chỉ.', 'error'))
+                                    .catch(err => toastr.error('Lỗi khi lấy thông tin địa chỉ.'))
                                     .finally(() => {
                                         this.innerHTML = originalButtonHTML;
                                         this.disabled = false;
@@ -258,83 +270,50 @@
                                 if (error.code === error.PERMISSION_DENIED) {
                                     errorMessage = "Bạn đã từ chối yêu cầu truy cập vị trí.";
                                 }
-                                showToast(errorMessage, 'error');
+                                toastr.error(errorMessage);
                                 this.innerHTML = originalButtonHTML;
                                 this.disabled = false;
                                 lucide.createIcons();
                             }
                         );
                     } else {
-                        showToast('Trình duyệt của bạn không hỗ trợ định vị.', 'error');
+                        toastr.error('Trình duyệt của bạn không hỗ trợ định vị.');
                     }
                 });
             }
 
-            if(popupSelectLocationBtn) popupSelectLocationBtn.addEventListener('click', () => {
-                if(popupLocationText.textContent) {
-                    selectAddress(popupLocationText.textContent);
-                }
-            });
+            if (popupSelectLocationBtn) {
+                popupSelectLocationBtn.addEventListener('click', () => {
+                    if (popupLocationText.textContent) {
+                        selectAddress(popupLocationText.textContent);
+                    }
+                });
+            }
+
+            lucide.createIcons();
         });
 
-        function updateCartCount(count) {
+        // Hàm cập nhật số lượng giỏ hàng
+        function updateCartCount() {
             const cartCountElement = document.getElementById('cart-count');
             if (!cartCountElement) return;
 
-            if (count !== undefined) {
-                if (count > 0) {
-                    cartCountElement.textContent = count;
-                    cartCountElement.classList.remove('hidden');
-                } else {
-                    cartCountElement.textContent = '0';
-                    cartCountElement.classList.add('hidden');
-                }
-            } else {
-                 fetch('@Url.Action("GetCartCount", "Cart")')
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.count > 0) {
-                            cartCountElement.textContent = data.count;
-                            cartCountElement.classList.remove('hidden');
-                        } else {
-                            cartCountElement.textContent = '0';
-                            cartCountElement.classList.add('hidden');
-                        }
-                    });
-            }
+            fetch('@Url.Action("GetCartCount", "Cart")')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.count > 0) {
+                        cartCountElement.textContent = data.count;
+                        cartCountElement.classList.remove('hidden');
+                    } else {
+                        cartCountElement.textContent = '0';
+                        cartCountElement.classList.add('hidden');
+                    }
+                })
+                .catch(error => console.error('Unable to get cart count.', error));
         }
 
-        function showToast(message, type = 'success') {
-            const toastContainer = document.getElementById('toast-container') || createToastContainer();
-            const toast = document.createElement('div');
-            const icon = type === 'success' ? 'check-circle' : 'x-circle';
-            const colors = type === 'success' ? 'bg-green-500' : 'bg-red-500';
-
-            toast.className = `flex items-center space-x-2 p-4 rounded-lg shadow-lg text-white ${colors} transform transition-transform duration-300 translate-x-full`;
-            toast.innerHTML = `<i data-lucide="${icon}" class="h-5 w-5"></i><span>${message}</span>`;
-
-            toastContainer.appendChild(toast);
-            lucide.createIcons();
-
-            setTimeout(() => {
-                toast.classList.remove('translate-x-full');
-            }, 10);
-
-            setTimeout(() => {
-                toast.classList.add('translate-x-full');
-                setTimeout(() => toast.remove(), 300);
-            }, 3000);
-        }
-
-        function createToastContainer() {
-            const container = document.createElement('div');
-            container.id = 'toast-container';
-            container.className = 'fixed top-20 right-5 z-[100] space-y-2';
-            document.body.appendChild(container);
-            return container;
-        }
-
-        lucide.createIcons();
     </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

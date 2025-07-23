@@ -2,6 +2,7 @@
 using FastFoodApp.Helpers; 
 using FastFoodApp.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FastFoodApp.Controllers
 {
@@ -17,9 +18,23 @@ namespace FastFoodApp.Controllers
 
         List<CartItemViewModel> Carts => HttpContext.Session.Get<List<CartItemViewModel>>(CARTKEY) ?? new List<CartItemViewModel>();
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            return View(Carts);
+            var cartItems = Carts;
+
+            var recommended = await _context.MonAns
+                                            .Where(m => m.MaLoai == 4)
+                                            .Take(4)
+                                            .AsNoTracking()
+                                            .ToListAsync();
+
+            var viewModel = new CartViewModel
+            {
+                CartItems = cartItems,
+                RecommendedProducts = recommended
+            };
+
+            return View(viewModel);
         }
 
         private IActionResult AddItemToCart(int id, bool isCombo, int quantity)
@@ -81,10 +96,10 @@ namespace FastFoodApp.Controllers
         }
 
         [HttpPost]
-        public IActionResult RemoveFromCart(int id, bool isCombo)
+        public IActionResult RemoveCartItem(int itemId, bool isCombo)
         {
             var gioHang = Carts;
-            var item = gioHang.SingleOrDefault(p => p.ItemId == id && p.IsCombo == isCombo);
+            var item = gioHang.SingleOrDefault(p => p.ItemId == itemId && p.IsCombo == isCombo);
 
             if (item != null)
             {
@@ -130,24 +145,26 @@ namespace FastFoodApp.Controllers
             return Json(new { count = Carts.Sum(i => i.SoLuong) });
         }
         [HttpPost]
-        public IActionResult UpdateCart(Dictionary<int, int> quantities)
+        public IActionResult UpdateCartItem(int itemId, bool isCombo, int quantity)
         {
             var gioHang = Carts;
+            var item = gioHang.SingleOrDefault(p => p.ItemId == itemId && p.IsCombo == isCombo);
 
-            // Lọc ra những sản phẩm có số lượng > 0 để tạo giỏ hàng mới
-            var updatedCart = new List<CartItemViewModel>();
-            foreach (var item in gioHang)
+            if (item != null)
             {
-                if (quantities.TryGetValue(item.MaMonAn, out int newQuantity) && newQuantity > 0)
+                if (quantity > 0)
                 {
-                    item.SoLuong = newQuantity;
-                    updatedCart.Add(item);
+                    item.SoLuong = quantity;
                 }
+                else
+                {
+                    gioHang.Remove(item);
+                }
+                HttpContext.Session.Set(CARTKEY, gioHang);
             }
 
-            HttpContext.Session.Set(CARTKEY, updatedCart);
             return RedirectToAction("Index");
         }
-       
+
     }
 }
