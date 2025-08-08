@@ -16,6 +16,7 @@
 
         <form asp-action="Index" method="post">
             @Html.AntiForgeryToken()
+            <div asp-validation-summary="All" class="text-red-500 mb-4"></div>
             <div class="grid grid-cols-1 lg:grid-cols-5 gap-8">
                 <!-- Cột trái: Chi tiết -->
                 <div class="lg:col-span-3 space-y-8">
@@ -49,16 +50,29 @@
 
                     <!-- Thẻ phương thức thanh toán -->
                     <div class="bg-white rounded-xl shadow-lg p-6 animate-slide-up" style="animation-delay: 100ms;">
-                         <h2 class="text-xl font-bold text-gray-800 flex items-center mb-4">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center mb-4">
                             <i data-lucide="credit-card" class="h-6 w-6 mr-3 text-red-500"></i>
                             Phương thức thanh toán
                         </h2>
-                        <div class="border border-red-500 rounded-lg p-4">
-                            <label class="flex items-center cursor-pointer">
-                                <input type="radio" name="paymentMethod" checked class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" />
-                                <span class="ml-3 font-semibold text-gray-700">Thanh toán khi nhận hàng (COD)</span>
-                            </label>
+                        <div class="space-y-4">
+                            <div class="border border-gray-300 rounded-lg p-4 has-[:checked]:border-red-500 has-[:checked]:ring-2 has-[:checked]:ring-red-200">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="payment_cod" asp-for="PaymentMethod" value="COD" checked class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" />
+                                    <span class="ml-3 font-semibold text-gray-700">Thanh toán khi nhận hàng (COD)</span>
+                                </label>
+                            </div>
+                            <div class="border border-gray-300 rounded-lg p-4 has-[:checked]:border-red-500 has-[:checked]:ring-2 has-[:checked]:ring-red-200">
+                                <label class="flex items-center cursor-pointer">
+                                    <input type="radio" id="payment_vnpay" asp-for="PaymentMethod" value="VNPAY" class="h-4 w-4 text-red-600 border-gray-300 focus:ring-red-500" />
+                                    <span class="ml-3 font-semibold text-gray-700">Thanh toán bằng mã QR</span>
+                                </label>
+                                <div id="vnpay-qr-container" class="hidden mt-4 text-center">
+                                    <img src="~/images/vnpay_qr.png" alt="VNPAY QR Code" class="mx-auto w-48 h-48" />
+                                    <p class="text-sm text-gray-600 mt-2">Quét mã để thanh toán. Nội dung: Tên + SĐT</p>
+                                </div>
+                            </div>
                         </div>
+                        <span asp-validation-for="PaymentMethod" class="text-red-500 text-sm mt-2"></span>
                     </div>
                 </div>
 
@@ -114,6 +128,18 @@
 
                 const modalContainer = document.getElementById('modal-container');
                 const changeAddressBtn = document.getElementById('change-address-btn');
+                const paymentRadios = document.querySelectorAll('input[name="PaymentMethod"]');
+                const vnpayContainer = document.getElementById('vnpay-qr-container');
+
+                paymentRadios.forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        if (this.value === 'VNPAY') {
+                            vnpayContainer.classList.remove('hidden');
+                        } else {
+                            vnpayContainer.classList.add('hidden');
+                        }
+                    });
+                });
 
                 if(changeAddressBtn) {
                     changeAddressBtn.addEventListener('click', async function() {

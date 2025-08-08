@@ -1,0 +1,73 @@
+@model string
+
+<!-- Bộ lọc tìm kiếm nâng cao -->
+<div class="bg-gray-50 p-4 rounded-lg mb-6">
+    <form method="get" asp-action="Index" class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <!-- Tìm kiếm -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                <input type="text" name="searchTerm" value="@Model" 
+                       placeholder="Tên món, mô tả, ID..." 
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+            </div>
+
+            <!-- Lọc loại sản phẩm -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Loại sản phẩm</label>
+                <select name="categoryFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    <option value="">Tất cả loại</option>
+                    @if (ViewBag.Categories != null)
+                    {
+                        @foreach (var category in ViewBag.Categories)
+                        {
+                            <option value="@category" selected="@(ViewData["CurrentCategoryFilter"]?.ToString() == category)">@category</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Giá từ -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Giá từ</label>
+                <input type="number" name="minPrice" value="@ViewData["CurrentMinPrice"]" 
+                       placeholder="0" step="1000"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+            </div>
+
+            <!-- Giá đến -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Giá đến</label>
+                <input type="number" name="maxPrice" value="@ViewData["CurrentMaxPrice"]" 
+                       placeholder="1000000" step="1000"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+            </div>
+        </div>
+        
+        <div class="flex justify-between items-center pt-2">
+            <div class="flex space-x-2">
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors flex items-center space-x-2">
+                    <i data-lucide="search" class="h-4 w-4"></i>
+                    <span>Tìm kiếm</span>
+                </button>
+                <a asp-action="Index" class="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors flex items-center space-x-2">
+                    <i data-lucide="refresh-cw" class="h-4 w-4"></i>
+                    <span>Reset</span>
+                </a>
+            </div>
+            
+            <!-- Sắp xếp theo -->
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">Sắp xếp:</label>
+                <select name="sortOrder" onchange="this.form.submit()" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    <option value="newest" selected="@(ViewData["CurrentSort"]?.ToString() == "newest")">Mới nhất</option>
+                    <option value="oldest" selected="@(ViewData["CurrentSort"]?.ToString() == "oldest")">Cũ nhất</option>
+                    <option value="name_asc" selected="@(ViewData["CurrentSort"]?.ToString() == "name_asc")">Tên (A-Z)</option>
+                    <option value="name_desc" selected="@(ViewData["CurrentSort"]?.ToString() == "name_desc")">Tên (Z-A)</option>
+                    <option value="price_asc" selected="@(ViewData["CurrentSort"]?.ToString() == "price_asc")">Giá tăng dần</option>
+                    <option value="price_desc" selected="@(ViewData["CurrentSort"]?.ToString() == "price_desc")">Giá giảm dần</option>
+                </select>
+            </div>
+        </div>
+    </form>
+</div>

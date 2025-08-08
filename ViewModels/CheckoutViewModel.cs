@@ -9,12 +9,15 @@ namespace FastFoodApp.ViewModels
 
         [Required(ErrorMessage = "Vui lòng chọn một địa chỉ giao hàng.")]
         public int SelectedAddressId { get; set; }
+        
+        [Required(ErrorMessage = "Vui lòng chọn phương thức thanh toán.")]
+        public string PaymentMethod { get; set; } = "COD";
 
         [BindNever]
-        public List<CartItemViewModel> CartItems { get; set; }
+        public List<CartItemViewModel> CartItems { get; set; } = new();
 
         [BindNever]
-        public List<DiaChiNguoiDung> Addresses { get; set; }
+        public List<DiaChiNguoiDung> Addresses { get; set; } = new();
 
         [BindNever]
         public decimal TongTienGoc { get; set; }

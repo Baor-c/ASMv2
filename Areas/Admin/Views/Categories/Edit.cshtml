@@ -1,0 +1,27 @@
+﻿@model ASM1.Models.LoaiMonAn
+@{
+    ViewData["Title"] = "Chỉnh sửa Danh mục";
+}
+
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-sm">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Chỉnh sửa: @Model.TenLoai</h2>
+    <form asp-action="Edit" method="post" class="space-y-6">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="MaLoai" />
+        <div asp-validation-summary="ModelOnly" class="text-red-600 text-sm"></div>
+
+        <div>
+            <label asp-for="TenLoai" class="block text-sm font-medium text-gray-700 mb-1">Tên danh mục</label>
+            <input asp-for="TenLoai" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" />
+            <span asp-validation-for="TenLoai" class="text-red-500 text-sm"></span>
+        </div>
+
+        <div class="flex items-center justify-end space-x-4 pt-4">
+            <a asp-action="Index" class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">Hủy</a>
+            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center space-x-2">
+                <i data-lucide="save" class="h-4 w-4"></i>
+                <span>Cập nhật</span>
+            </button>
+        </div>
+    </form>
+</div>

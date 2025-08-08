@@ -1,0 +1,147 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Panel</title>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Chart.js for Analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+    <!-- Toastr CSS for notifications -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+
+    <!-- Custom Site CSS -->
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .sidebar-scroll::-webkit-scrollbar { width: 4px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 2px; }
+
+        .sidebar-link-active {
+            background-color: #ef4444; /* red-500 */
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="flex h-screen bg-gray-100">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-gray-900 text-gray-300 flex-shrink-0 flex flex-col">
+            <!-- Logo -->
+            <div class="h-16 flex items-center justify-center px-4 bg-black/30">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="flex items-center space-x-2">
+                    <span class="text-3xl">🍔</span>
+                    <span class="text-xl font-bold text-white">SnapBite Admin</span>
+                </a>
+            </div>
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 py-6 space-y-2 overflow-y-auto sidebar-scroll">
+                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" 
+                   class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors sidebar-link" data-controller="Dashboard">
+                    <i data-lucide="bar-chart-3" class="h-5 w-5"></i>
+                    <span>Tổng quan</span>
+                </a>
+                <a asp-area="Admin" asp-controller="Users" asp-action="Index" 
+                   class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors sidebar-link" data-controller="Users">
+                    <i data-lucide="users" class="h-5 w-5"></i>
+                    <span>Người dùng</span>
+                </a>
+                <a asp-area="Admin" asp-controller="Categories" asp-action="Index" 
+                   class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors sidebar-link" data-controller="Categories">
+                    <i data-lucide="package" class="h-5 w-5"></i>
+                    <span>Danh mục</span>
+                </a>
+                <a asp-area="Admin" asp-controller="Products" asp-action="Index"
+                   class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors sidebar-link" data-controller="Products">
+                    <i data-lucide="pizza" class="h-5 w-5"></i>
+                    <span>Sản phẩm</span>
+                </a>
+                <!-- Options menu removed -->
+                <a asp-area="Admin" asp-controller="Combos" asp-action="Index" 
+                   class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors sidebar-link" data-controller="Combos">
+                    <i data-lucide="shopping-bag" class="h-5 w-5"></i>
+                    <span>Combo</span>
+                </a>
+                <a asp-area="Admin" asp-controller="Orders" asp-action="Index" 
+                   class="flex items-center space-x-3 px-3 py-2 rounded-lg hover:bg-red-500 hover:text-white transition-colors sidebar-link" data-controller="Orders">
+                    <i data-lucide="truck" class="h-5 w-5"></i>
+                    <span>Đơn hàng</span>
+                </a>
+            </nav>
+            <!-- User Profile in Sidebar -->
+            <div class="p-4 border-t border-gray-700/50">
+                <div class="flex items-center space-x-3">
+                    <img class="h-10 w-10 rounded-full object-cover" src="https://placehold.co/40x40/ef4444/white?text=@(User.Identity.Name?.Substring(0,1).ToUpper())" alt="User Avatar">
+                    <div>
+                        <p class="font-semibold text-white">@User.Identity.Name</p>
+                        <form asp-controller="Account" asp-action="Logout" asp-area="" method="post">
+                            <button type="submit" class="text-sm text-red-400 hover:underline">Đăng xuất</button>
+                        </form>
+                        </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top bar -->
+            <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6">
+                 <h1 class="text-xl font-semibold text-gray-800">@ViewData["Title"]</h1>
+                 <a asp-controller="Home" asp-action="Index" asp-area="" class="text-sm text-red-600 hover:underline flex items-center space-x-1">
+                     <span>Về trang khách hàng</span>
+                     <i data-lucide="external-link" class="h-4 w-4"></i>
+                 </a>
+            </header>
+            <!-- Content Body -->
+            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 p-6">
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
+    <script>
+        lucide.createIcons();
+        toastr.options = { "closeButton": true, "progressBar": true, "positionClass": "toast-bottom-right" };
+
+        function showToastFromTempData() {
+            var success = '@Html.Raw(TempData["ToastSuccess"])'; if (success) toastr.success(success);
+            var error = '@Html.Raw(TempData["ToastError"])'; if (error) toastr.error(error);
+            var info = '@Html.Raw(TempData["ToastInfo"])'; if (info) toastr.info(info);
+            var warning = '@Html.Raw(TempData["ToastWarning"])'; if (warning) toastr.warning(warning);
+        }
+
+        function highlightActiveLink() {
+            const currentController = '@ViewContext.RouteData.Values["controller"]';
+            const links = document.querySelectorAll('.sidebar-link');
+            links.forEach(link => {
+                if (link.getAttribute('data-controller') === currentController) {
+                    link.classList.add('sidebar-link-active');
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            showToastFromTempData();
+            highlightActiveLink();
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

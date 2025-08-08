@@ -42,24 +42,111 @@
                     </div>
                 </div>
 
-                <!-- Add to Cart Form -->
-                <form asp-controller="Cart" asp-action="AddComboToCart" method="post">
-                    <input type="hidden" name="id" value="@Model.MaCombo" />
-                    <div class="flex items-center space-x-4 mb-6">
+                <!-- Add to Cart -->
+                <div class="mb-6">
+                    <div class="flex items-center space-x-4">
                         <label class="block text-sm font-medium text-gray-700">Số lượng</label>
-                        <input type="number" name="quantity" value="1" class="w-20 text-center border-gray-300 rounded-md" min="1" />
+                        <div class="flex items-center">
+                            <button id="decreaseQuantity" class="w-8 h-8 bg-gray-200 rounded-l flex items-center justify-center hover:bg-gray-300 transition-colors">
+                                <i data-lucide="minus" class="h-4 w-4"></i>
+                            </button>
+                            <input type="number" id="comboQuantity" value="1" min="1" max="10" 
+                                   class="w-12 text-center border-y border-gray-300 h-8 focus:outline-none">
+                            <button id="increaseQuantity" class="w-8 h-8 bg-gray-200 rounded-r flex items-center justify-center hover:bg-gray-300 transition-colors">
+                                <i data-lucide="plus" class="h-4 w-4"></i>
+                            </button>
+                        </div>
                     </div>
-                    <button type="submit" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors">
-                        Thêm vào giỏ hàng
-                    </button>
-                </form>
+                </div>
+                <button onclick="addToCartWithQuantity()" class="w-full bg-red-600 text-white py-3 rounded-lg font-semibold hover:bg-red-700 transition-colors flex items-center justify-center">
+                    <i data-lucide="shopping-cart" class="h-5 w-5 mr-2"></i>
+                    Thêm vào giỏ hàng
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-        <script>
-            lucide.createIcons();
-        </script>
+    <script>
+        lucide.createIcons();
+        
+        // Quantity controls
+        document.getElementById('decreaseQuantity').addEventListener('click', function() {
+            let currentQty = parseInt(document.getElementById('comboQuantity').value);
+            if (currentQty > 1) {
+                document.getElementById('comboQuantity').value = currentQty - 1;
+            }
+        });
+        
+        document.getElementById('increaseQuantity').addEventListener('click', function() {
+            let currentQty = parseInt(document.getElementById('comboQuantity').value);
+            if (currentQty < 10) {
+                document.getElementById('comboQuantity').value = currentQty + 1;
+            }
+        });
+        
+        // Add to cart with specific quantity
+        function addToCartWithQuantity() {
+            const id = @Model.MaCombo;
+            const quantity = parseInt(document.getElementById('comboQuantity').value);
+            
+            fetch(`/Cart/QuickAdd?id=${id}&quantity=${quantity}&isCombo=true&redirectToCart=false`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCartCount(data.cartCount);
+                        showNotification('Đã thêm combo vào giỏ hàng!', 'success');
+                    } else {
+                        showNotification('Không thể thêm vào giỏ hàng', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Có lỗi xảy ra', 'error');
+                });
+        }
+        
+        // Simple notification function
+        function showNotification(message, type) {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white shadow-lg transform transition-transform duration-300 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+        // Function to update cart count
+        function updateCartCount(count) {
+            const cartCountElement = document.getElementById('cart-count');
+            if (!cartCountElement) return;
+            
+            if (count !== undefined) {
+                cartCountElement.textContent = count;
+                cartCountElement.classList.remove('hidden');
+            } else {
+                fetch('@Url.Action("GetCartCount", "Cart")')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.count > 0) {
+                            cartCountElement.textContent = data.count;
+                            cartCountElement.classList.remove('hidden');
+                        } else {
+                            cartCountElement.classList.add('hidden');
+                        }
+                    })
+                    .catch(err => console.error('Error fetching cart count:', err));
+            }
+        }
+    </script>
 }

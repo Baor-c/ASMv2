@@ -1,0 +1,69 @@
+@model ASM1.Models.MonAn
+@{
+    ViewData["Title"] = "Chi tiết Sản phẩm";
+}
+
+<div class="bg-white rounded-lg shadow-sm">
+    <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-800">Chi tiết Sản phẩm</h2>
+        <div class="flex space-x-3">
+            <a asp-action="Edit" asp-route-id="@Model.MaMonAn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+                <i data-lucide="edit" class="h-4 w-4"></i>
+                <span>Chỉnh sửa</span>
+            </a>
+            <a asp-action="Index" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center space-x-2">
+                <i data-lucide="arrow-left" class="h-4 w-4"></i>
+                <span>Quay lại</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Hình ảnh -->
+            <div>
+                @if (Model.HinhAnh != null)
+                {
+                    <img src="data:image/jpeg;base64,@Convert.ToBase64String(Model.HinhAnh)" 
+                         class="w-full h-80 object-cover rounded-lg border" alt="@Model.TenMonAn">
+                }
+                else
+                {
+                    <div class="w-full h-80 bg-gray-200 rounded-lg border flex items-center justify-center">
+                        <i data-lucide="image" class="h-16 w-16 text-gray-400"></i>
+                    </div>
+                }
+            </div>
+
+            <!-- Thông tin chi tiết -->
+            <div class="space-y-6">
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Mã sản phẩm</label>
+                    <p class="text-lg text-gray-900">#@Model.MaMonAn</p>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Tên sản phẩm</label>
+                    <h1 class="text-2xl font-bold text-gray-900">@Model.TenMonAn</h1>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Loại sản phẩm</label>
+                    <span class="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                        @Model.LoaiMonAn?.TenLoai
+                    </span>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Giá bán</label>
+                    <p class="text-3xl font-bold text-red-600">@Model.Gia.ToString("N0") VNĐ</p>
+                </div>
+
+                <div>
+                    <label class="text-sm font-medium text-gray-500">Mô tả</label>
+                    <p class="text-gray-700 leading-relaxed">@Model.MoTa</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

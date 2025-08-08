@@ -1,0 +1,160 @@
+@model Combo
+@{
+    ViewData["Title"] = "Quản lý chi tiết combo";
+    var allProducts = ViewBag.AllProducts as List<MonAn>;
+    var comboProducts = ViewBag.ComboProducts as List<MonAn>;
+}
+
+<div class="bg-white rounded-lg shadow-sm p-6">
+    <div class="flex items-center justify-between border-b border-gray-200 pb-4 mb-6">
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-800">@Model.TenCombo</h2>
+            <p class="text-gray-600 mt-1">@Model.MoTa</p>
+            <p class="mt-2"><span class="font-semibold">Giá:</span> @Model.Gia.ToString("N0") VNĐ</p>
+        </div>
+        <div class="ml-4 flex-shrink-0">
+            @if (Model.HinhAnh != null && Model.HinhAnh.Length > 0)
+            {
+                <img src="data:image/png;base64,@Convert.ToBase64String(Model.HinhAnh)" 
+                     class="h-32 w-32 object-cover rounded-lg shadow-sm" alt="@Model.TenCombo">
+            }
+            else
+            {
+                <div class="h-32 w-32 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="image" class="h-10 w-10 text-gray-400"></i>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8">
+        <div>
+            <h3 class="text-lg font-semibold mb-4">Sản phẩm trong combo</h3>
+            @if (comboProducts == null || !comboProducts.Any())
+            {
+                <p class="text-gray-500">Chưa có sản phẩm nào trong combo này.</p>
+            }
+            else
+            {
+                <div class="space-y-3">
+                    @foreach (var product in comboProducts)
+                    {
+                        <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50">
+                            <div class="flex items-center">
+                                @if (product.HinhAnh != null && product.HinhAnh.Length > 0)
+                                {
+                                    <img src="data:image/png;base64,@Convert.ToBase64String(product.HinhAnh)" 
+                                         class="h-12 w-12 object-cover rounded mr-4" alt="@product.TenMonAn">
+                                }
+                                else
+                                {
+                                    <div class="h-12 w-12 bg-gray-100 rounded flex items-center justify-center mr-4">
+                                        <i data-lucide="image" class="h-5 w-5 text-gray-400"></i>
+                                    </div>
+                                }
+                                <div>
+                                    <h4 class="font-medium text-gray-800">@product.TenMonAn</h4>
+                                    <p class="text-sm text-gray-600">@product.Gia.ToString("N0") VNĐ</p>
+                                </div>
+                            </div>
+                            <form asp-action="RemoveProductFromCombo" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="comboId" value="@Model.MaCombo" />
+                                <input type="hidden" name="productId" value="@product.MaMonAn" />
+                                <button type="submit" class="text-red-600 hover:text-red-800" title="Xóa khỏi combo">
+                                    <i data-lucide="x-circle" class="h-5 w-5"></i>
+                                </button>
+                            </form>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <div>
+            <h3 class="text-lg font-semibold mb-4">Thêm sản phẩm vào combo</h3>
+            @if (allProducts == null || !allProducts.Any())
+            {
+                <p class="text-gray-500">Không có sản phẩm nào khả dụng.</p>
+            }
+            else
+            {
+                <div class="mb-4">
+                    <input type="text" id="productSearch" placeholder="Tìm sản phẩm..." 
+                           class="w-full p-2 border border-gray-300 rounded-lg">
+                </div>
+                <div class="space-y-3 max-h-96 overflow-y-auto" id="productList">
+                    @foreach (var product in allProducts)
+                    {
+                        if (comboProducts == null || !comboProducts.Any(p => p.MaMonAn == product.MaMonAn))
+                        {
+                            <div class="product-item flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50" 
+                                 data-name="@product.TenMonAn.ToLower()" data-category="@product.LoaiMonAn?.TenLoai.ToLower()">
+                                <div class="flex items-center">
+                                    @if (product.HinhAnh != null && product.HinhAnh.Length > 0)
+                                    {
+                                        <img src="data:image/png;base64,@Convert.ToBase64String(product.HinhAnh)" 
+                                             class="h-12 w-12 object-cover rounded mr-4" alt="@product.TenMonAn">
+                                    }
+                                    else
+                                    {
+                                        <div class="h-12 w-12 bg-gray-100 rounded flex items-center justify-center mr-4">
+                                            <i data-lucide="image" class="h-5 w-5 text-gray-400"></i>
+                                        </div>
+                                    }
+                                    <div>
+                                        <h4 class="font-medium text-gray-800">@product.TenMonAn</h4>
+                                        <div class="flex items-center">
+                                            <span class="text-sm text-gray-600 mr-2">@product.Gia.ToString("N0") VNĐ</span>
+                                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                                @product.LoaiMonAn?.TenLoai
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <form asp-action="AddProductToCombo" method="post">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="comboId" value="@Model.MaCombo" />
+                                    <input type="hidden" name="productId" value="@product.MaMonAn" />
+                                    <button type="submit" class="bg-green-600 text-white p-1.5 rounded-full hover:bg-green-700">
+                                        <i data-lucide="plus" class="h-4 w-4"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="mt-6 border-t border-gray-200 pt-4 flex justify-between">
+        <a asp-action="Index" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors">
+            Quay lại danh sách combo
+        </a>
+        <a asp-action="Edit" asp-route-id="@Model.MaCombo" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            Sửa thông tin combo
+        </a>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#productSearch').on('keyup', function() {
+                const searchValue = $(this).val().toLowerCase().trim();
+                
+                $('.product-item').each(function() {
+                    const productName = $(this).data('name');
+                    const productCategory = $(this).data('category');
+                    
+                    if (productName.includes(searchValue) || productCategory.includes(searchValue)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+        });
+    </script>
+}

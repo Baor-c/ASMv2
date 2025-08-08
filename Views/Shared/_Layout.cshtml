@@ -6,116 +6,444 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - FastBite</title>
+    <title>@ViewData["Title"] - SnapBite</title>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <!-- External CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" />
 
     <!-- Local CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 
     <!-- External JS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script>
+        // Đảm bảo icons được tạo sau khi DOM đã tải và thư viện Lucide đã sẵn sàng
+        function initializeLucideIcons() {
+            if (typeof lucide !== 'undefined' && lucide && lucide.createIcons) {
+                try {
+                    lucide.createIcons();
+                    console.log('Lucide icons initialized successfully');
+                } catch (error) {
+                    console.error('Error initializing Lucide icons:', error);
+                }
+            } else {
+                console.warn('Lucide library not ready yet, retrying in 200ms');
+                setTimeout(initializeLucideIcons, 200);
+            }
+        }
+
+        // Đợi DOM và tất cả tài nguyên tải xong
+        window.addEventListener('load', initializeLucideIcons);
+        
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Poppins', 'Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        'brand': {
+                            50: '#fef2f2',
+                            100: '#fee2e2',
+                            500: '#ef4444',
+                            600: '#dc2626',
+                            700: '#b91c1c',
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                        },
+                        'accent': {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.5s ease-in-out',
+                        'slide-up': 'slideUp 0.5s ease-out',
+                        'bounce-slow': 'bounce 2s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' }
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Brand Colors */
+        :root {
+            --brand-50: #fef7f0;
+            --brand-100: #fdeee1;
+            --brand-200: #fbd5b7;
+            --brand-300: #f8bc8d;
+            --brand-400: #f5a363;
+            --brand-500: #f28a3a;
+            --brand-600: #e8721e;
+            --brand-700: #d15a02;
+            --brand-800: #a84501;
+            --brand-900: #7e3400;
+            --accent-400: #fbbf24;
+            --accent-500: #f59e0b;
+        }
+
+        body {
+            font-family: 'Poppins', 'Inter', sans-serif;
+        }
+        .glass-effect {
+            backdrop-filter: blur(16px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.125);
+        }
+        .navbar-blur {
+            backdrop-filter: blur(20px) saturate(180%);
+            background-color: rgba(255, 255, 255, 0.97);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .navbar-transparent {
+            backdrop-filter: none;
+            background: transparent;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 25%, #d97706 75%, #f59e0b 100%);
+        }
+
+        /* Enhanced Animations */
+        @@keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .float-animation {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Text Glow Effect */
+        .text-glow {
+            text-shadow: 0 0 20px rgba(242, 138, 58, 0.5);
+        }
+
+        /* Pulse Animation for CTA Buttons */
+        @@keyframes pulse-glow {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(242, 138, 58, 0.3);
+            }
+            50% { 
+                box-shadow: 0 0 30px rgba(242, 138, 58, 0.6);
+            }
+        }
+
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Line Clamp Utility */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Enhanced Button Styles */
+        .btn-gradient {
+            background: linear-gradient(135deg, var(--brand-600), var(--accent-500));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gradient::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn-gradient:hover::before {
+            left: 100%;
+        }
+
+        /* Scroll Smooth */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, var(--brand-600), var(--accent-500));
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, var(--brand-700), var(--accent-600));
+        }
+    </style>
 </head>
 <body class="bg-gray-50">
-    <header class="sticky top-0 bg-white shadow-lg z-50">
+   <header id="navbar" class="sticky top-0 glass-effect shadow-lg z-50 border-b border-white/20">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16">
                 <!-- Logo -->
-                <a asp-controller="Home" asp-action="Index" class="flex items-center space-x-2">
-                    <div class="text-3xl">🍔</div>
-                    <span class="text-2xl font-bold text-red-600">FastBite</span>
+                <a asp-controller="Home" asp-action="Index" class="flex items-center space-x-3 group">
+                    <div class="text-3xl group-hover:scale-110 transition-transform duration-300">🍔</div>
+                    <span class="text-2xl font-bold bg-gradient-to-r from-brand-600 to-accent-500 bg-clip-text text-transparent">SnapBite</span>
                 </a>
 
                 <!-- Desktop Navigation -->
                 <nav class="hidden md:flex items-center space-x-8">
-                    <a asp-controller="Home" asp-action="Index" class="text-gray-700 hover:text-red-600 font-medium transition-colors">Trang chủ</a>
-                    <a asp-controller="Product" asp-action="Index" class="text-gray-700 hover:text-red-600 font-medium transition-colors">Thực đơn</a>
-                    <a asp-controller="Order" asp-action="Index" class="text-gray-700 hover:text-red-600 font-medium transition-colors">Lịch sử</a>
+                    <a asp-controller="Home" asp-action="Index" class="relative text-gray-700 hover:text-brand-600 font-medium transition-all duration-300 py-2 group">
+                        Trang chủ
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-brand-600 transition-all duration-300 group-hover:w-full"></span>
+                    </a>
+                    <a asp-controller="Product" asp-action="Index" class="relative text-gray-700 hover:text-brand-600 font-medium transition-all duration-300 py-2 group">
+                        Thực đơn
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-brand-600 transition-all duration-300 group-hover:w-full"></span>
+                    </a>
+                    <a asp-controller="Order" asp-action="Index" class="relative text-gray-700 hover:text-brand-600 font-medium transition-all duration-300 py-2 group">
+                        Lịch sử
+                        <span class="absolute bottom-0 left-0 w-0 h-0.5 bg-brand-600 transition-all duration-300 group-hover:w-full"></span>
+                    </a>
                 </nav>
 
-                <!-- Location Selector -->
-                <button id="location-selector-btn" class="hidden lg:flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors">
-                    <i data-lucide="map-pin" class="w-4 h-4"></i>
-                    <span id="current-address-display" class="max-w-48 truncate">
-                        @Context.Session.GetString("CurrentAddress") ?? "Chọn địa chỉ"
-                    </span>
-                </button>
-
                 <!-- Right Actions -->
-                <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 sm:space-x-4">
                     <!-- Cart -->
-                    <a asp-controller="Cart" asp-action="Index" class="relative p-2 text-gray-700 hover:text-red-600 transition-colors">
-                        <i data-lucide="shopping-cart" class="h-6 w-6"></i>
-                        <span id="cart-count" class="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                    <a asp-controller="Cart" asp-action="Index" class="relative p-3 text-gray-700 hover:text-brand-600 transition-all duration-300 hover:bg-brand-50 rounded-full group">
+                        <i data-lucide="shopping-cart" class="h-6 w-6 group-hover:scale-110 transition-transform duration-300"></i>
+                        <span id="cart-count" class="absolute -top-1 -right-1 bg-gradient-to-r from-brand-500 to-brand-600 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden animate-bounce-slow">0</span>
                     </a>
 
-                    <!-- User -->
-                    @if (User.Identity.IsAuthenticated)
+                    <!-- User Dropdown/Login -->
+                    @if (User.Identity?.IsAuthenticated == true)
                     {
-                            <a asp-controller="Account" asp-action="Profile" class="p-2 text-gray-700 hover:text-red-600 transition-colors" title="Hồ sơ của tôi">
-                                <i data-lucide="user" class="h-6 w-6"></i>
-                            </a>
+                            <div class="relative group">
+                                <!-- Trigger Button -->
+                                <button class="p-3 text-gray-700 hover:text-brand-600 transition-all duration-300 hover:bg-brand-50 rounded-full flex items-center space-x-2 group">
+                                     <i data-lucide="user" class="h-6 w-6 group-hover:scale-110 transition-transform duration-300"></i>
+                                    <span class="hidden sm:inline text-sm font-medium">@User.Identity.Name</span>
+                                    <i data-lucide="chevron-down" class="h-4 w-4 transition-transform duration-300 group-hover:rotate-180"></i>
+                                </button>
+
+                                <!-- Dropdown Panel Wrapper -->
+                                <div class="absolute right-0 pt-2 w-56 z-50 hidden group-hover:block">
+                                    <!-- Dropdown Content -->
+                                    <div class="bg-white rounded-xl shadow-xl py-2 border border-gray-200">
+                                        <div class="px-4 py-3 border-b border-gray-100">
+                                            <p class="text-sm font-medium text-gray-900">@User.Identity.Name</p>
+                                            <p class="text-xs text-gray-500">Thành viên SnapBite</p>
+                                        </div>
+                                        <a asp-controller="Account" asp-action="Profile" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-all duration-300 group">
+                                            <i data-lucide="user" class="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                                            Hồ sơ cá nhân
+                                        </a>
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                                <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-brand-50 hover:text-brand-600 transition-all duration-300 group">
+                                                    <i data-lucide="shield" class="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                                                    Trang quản trị
+                                                </a>
+                                    }
+                                        <hr class="my-2">
+                                        <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm">
+                                            <button type="submit" class="flex items-center w-full px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-all duration-300 group">
+                                                <i data-lucide="log-out" class="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                                                Đăng xuất
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
                     }
                     else
                     {
-                            <a asp-controller="Account" asp-action="Login" class="p-2 text-gray-700 hover:text-red-600 transition-colors" title="Đăng nhập">
-                                <i data-lucide="user" class="h-6 w-6"></i>
+                            <a asp-controller="Account" asp-action="Login" class="p-3 text-gray-700 hover:text-brand-600 transition-all duration-300 hover:bg-brand-50 rounded-full group" title="Đăng nhập">
+                                 <i data-lucide="user" class="h-6 w-6 group-hover:scale-110 transition-transform duration-300"></i>
                             </a>
                     }
+
+                    <!-- Mobile Menu Button -->
+                    <button id="mobile-menu-button" class="md:hidden p-3 text-gray-700 hover:text-brand-600 transition-all duration-300 hover:bg-brand-50 rounded-full group">
+                        <i data-lucide="menu" class="h-6 w-6 group-hover:scale-110 transition-transform duration-300"></i>
+                    </button>
                 </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white/95 backdrop-blur-lg border-t border-white/20">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a asp-controller="Home" asp-action="Index" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-all duration-300 group">
+                    <i data-lucide="home" class="h-5 w-5 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                    Trang chủ
+                </a>
+                <a asp-controller="Product" asp-action="Index" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-all duration-300 group">
+                    <i data-lucide="utensils" class="h-5 w-5 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                    Thực đơn
+                </a>
+                <a asp-controller="Order" asp-action="Index" class="flex items-center px-4 py-3 rounded-xl text-base font-medium text-gray-700 hover:text-brand-600 hover:bg-brand-50 transition-all duration-300 group">
+                    <i data-lucide="clock" class="h-5 w-5 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                    Lịch sử
+                </a>
             </div>
         </div>
     </header>
 
-    <main role="main" class="flex-grow">
+
+    <main role="main" class="flex-grow min-h-screen">
         @RenderBody()
     </main>
 
-    <footer class="bg-gray-900 text-white">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <footer class="bg-gradient-to-br from-gray-900 via-gray-800 to-black text-white relative overflow-hidden">
+        <!-- Background Pattern -->
+        <div class="absolute inset-0 opacity-5">
+            <div class="absolute top-10 left-10 text-4xl">🍔</div>
+            <div class="absolute top-20 right-20 text-3xl">🍟</div>
+            <div class="absolute bottom-20 left-20 text-3xl">🥤</div>
+            <div class="absolute bottom-10 right-10 text-4xl">🍗</div>
+        </div>
+        
+        <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div class="space-y-4">
-                    <div class="flex items-center space-x-2">
-                        <span class="text-3xl">🍔</span>
-                        <span class="text-2xl font-bold text-red-500">FastBite</span>
+                <!-- Brand Section -->
+                <div class="space-y-6 lg:col-span-2">
+                    <div class="flex items-center space-x-3">
+                        <span class="text-4xl animate-bounce-slow">🍔</span>
+                        <span class="text-3xl font-bold bg-gradient-to-r from-brand-500 to-accent-500 bg-clip-text text-transparent">SnapBite</span>
                     </div>
-                    <p class="text-gray-300 text-sm">Thức ăn nhanh chất lượng cao, phục vụ 24/7.</p>
+                    <p class="text-gray-300 text-lg leading-relaxed max-w-md">
+                        Thức ăn nhanh chất lượng cao, phục vụ 24/7. Đem đến cho bạn những món ăn ngon nhất với dịch vụ tốt nhất.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="#" class="w-10 h-10 bg-brand-600 hover:bg-brand-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group">
+                            <i data-lucide="facebook" class="h-5 w-5 group-hover:scale-110 transition-transform duration-300"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-brand-600 hover:bg-brand-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group">
+                            <i data-lucide="instagram" class="h-5 w-5 group-hover:scale-110 transition-transform duration-300"></i>
+                        </a>
+                        <a href="#" class="w-10 h-10 bg-brand-600 hover:bg-brand-700 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110 group">
+                            <i data-lucide="twitter" class="h-5 w-5 group-hover:scale-110 transition-transform duration-300"></i>
+                        </a>
+                    </div>
                 </div>
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold text-red-500">Liên kết nhanh</h3>
-                    <ul class="space-y-2">
-                        <li><a asp-controller="Home" asp-action="Index" class="text-gray-300 hover:text-white transition-colors text-sm">Trang chủ</a></li>
-                        <li><a asp-controller="Product" asp-action="Index" class="text-gray-300 hover:text-white transition-colors text-sm">Thực đơn</a></li>
+                
+                <!-- Quick Links -->
+                <div class="space-y-6">
+                    <h3 class="text-xl font-bold text-white relative">
+                        Liên kết nhanh
+                        <span class="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-brand-500 to-accent-500"></span>
+                    </h3>
+                    <ul class="space-y-3">
+                        <li>
+                            <a asp-controller="Home" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-all duration-300 group">
+                                <i data-lucide="home" class="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                                Trang chủ
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="Product" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-all duration-300 group">
+                                <i data-lucide="utensils" class="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                                Thực đơn
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="Order" asp-action="Index" class="flex items-center text-gray-300 hover:text-white transition-all duration-300 group">
+                                <i data-lucide="clock" class="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                                Lịch sử đặt hàng
+                            </a>
+                        </li>
+                        <li>
+                            <a asp-controller="Account" asp-action="Profile" class="flex items-center text-gray-300 hover:text-white transition-all duration-300 group">
+                                <i data-lucide="user" class="h-4 w-4 mr-3 group-hover:scale-110 transition-transform duration-300"></i>
+                                Tài khoản
+                            </a>
+                        </li>
                     </ul>
                 </div>
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold text-red-500">Thông tin liên hệ</h3>
-                    <div class="space-y-3">
-                        <div class="flex items-center space-x-2 text-sm"><i data-lucide="phone" class="h-4 w-4 text-red-500"></i><span class="text-gray-300">1900 1900</span></div>
-                        <div class="flex items-center space-x-2 text-sm"><i data-lucide="mail" class="h-4 w-4 text-red-500"></i><span class="text-gray-300">support@fastbite.vn</span></div>
+                
+                <!-- Contact Info -->
+                <div class="space-y-6">
+                    <h3 class="text-xl font-bold text-white relative">
+                        Liên hệ
+                        <span class="absolute bottom-0 left-0 w-12 h-0.5 bg-gradient-to-r from-brand-500 to-accent-500"></span>
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center space-x-3 text-gray-300 group hover:text-white transition-all duration-300">
+                            <div class="w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="phone" class="h-4 w-4"></i>
+                            </div>
+                            <span>1900 1900</span>
+                        </div>
+                        <div class="flex items-center space-x-3 text-gray-300 group hover:text-white transition-all duration-300">
+                            <div class="w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="mail" class="h-4 w-4"></i>
+                            </div>
+                            <span>support@snapbite.vn</span>
+                        </div>
+                        <div class="flex items-center space-x-3 text-gray-300 group hover:text-white transition-all duration-300">
+                            <div class="w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="map-pin" class="h-4 w-4"></i>
+                            </div>
+                            <span>Hà Nội, Việt Nam</span>
+                        </div>
+                        <div class="flex items-center space-x-3 text-gray-300 group hover:text-white transition-all duration-300">
+                            <div class="w-8 h-8 bg-brand-600 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <i data-lucide="clock" class="h-4 w-4"></i>
+                            </div>
+                            <span>24/7 - Luôn phục vụ</span>
+                        </div>
                     </div>
                 </div>
-                <div class="space-y-4">
-                    <h3 class="text-lg font-semibold text-red-500">Nhận thông tin mới</h3>
-                    <form class="space-y-2">
-                        <input type="email" placeholder="Email của bạn" class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-red-500 text-sm" />
-                        <button type="submit" class="w-full bg-red-600 text-white py-2 rounded-md font-medium hover:bg-red-700 transition-colors text-sm">Đăng ký</button>
-                    </form>
-                </div>
             </div>
-            <div class="border-t border-gray-800 mt-8 pt-8 text-center">
-                <p class="text-gray-400 text-sm">© @DateTime.Now.Year FastBite - All Rights Reserved.</p>
+            
+            <!-- Bottom Bar -->
+            <div class="mt-12 pt-8 border-t border-gray-700">
+                <div class="flex flex-col md:flex-row justify-between items-center">
+                    <p class="text-gray-400 text-sm">
+                        © 2025 SnapBite. Tất cả quyền được bảo lưu.
+                    </p>
+                    <div class="flex space-x-6 mt-4 md:mt-0">
+                        <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors duration-300">Điều khoản sử dụng</a>
+                        <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors duration-300">Chính sách bảo mật</a>
+                        <a href="#" class="text-gray-400 hover:text-white text-sm transition-colors duration-300">Hỗ trợ</a>
+                    </div>
+                </div>
             </div>
         </div>
     </footer>
-
     @await Html.PartialAsync("_LocationPopup")
 
     <!-- Scripts -->
@@ -124,75 +452,57 @@
 
     <script>
         // Cấu hình Toastr
-        toastr.options = {
-            "closeButton": true,
-            "debug": false,
-            "newestOnTop": true,
-            "progressBar": true,
-            "positionClass": "toast-bottom-right",
-            "preventDuplicates": false,
-            "onclick": null,
-            "showDuration": "300",
-            "hideDuration": "1000",
-            "timeOut": "5000",
-            "extendedTimeOut": "1000",
-            "showEasing": "swing",
-            "hideEasing": "linear",
-            "showMethod": "fadeIn",
-            "hideMethod": "fadeOut"
-        };
+        toastr.options = { "closeButton": true, "progressBar": true, "positionClass": "toast-bottom-right" };
 
-        // Hàm chung để hiển thị Toast từ TempData
         function showToastFromTempData() {
-            var successMessage = '@Html.Raw(TempData["ToastSuccess"])';
-            if (successMessage) toastr.success(successMessage);
-
-            var errorMessage = '@Html.Raw(TempData["ToastError"])';
-            if (errorMessage) toastr.error(errorMessage);
-
-            var infoMessage = '@Html.Raw(TempData["ToastInfo"])';
-            if (infoMessage) toastr.info(infoMessage);
-
-            var warningMessage = '@Html.Raw(TempData["ToastWarning"])';
-            if (warningMessage) toastr.warning(warningMessage);
+            var success = '@Html.Raw(TempData["ToastSuccess"])'; if (success) toastr.success(success);
+            var error = '@Html.Raw(TempData["ToastError"])'; if (error) toastr.error(error);
+            var info = '@Html.Raw(TempData["ToastInfo"])'; if (info) toastr.info(info);
+            var warning = '@Html.Raw(TempData["ToastWarning"])'; if (warning) toastr.warning(warning);
         }
 
-        // Script chính của trang
         document.addEventListener('DOMContentLoaded', function () {
-
+            lucide.createIcons();
             showToastFromTempData();
             updateCartCount();
 
-            // LOGIC POPUP ĐỊA CHỈ
+            // Mobile Menu Logic
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', function () {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Location Popup Logic
             const locationPopupOverlay = document.getElementById('location-popup-overlay');
             const locationPopup = document.getElementById('location-popup');
             const openPopupBtn = document.getElementById('location-selector-btn');
             const closePopupBtn = document.getElementById('close-location-popup');
-            const savedAddressesList = document.getElementById('saved-addresses-list');
             const addressDisplay = document.getElementById('current-address-display');
-            const popupGetLocationBtn = document.getElementById('popup-get-location-btn');
-            const popupLocationResult = document.getElementById('popup-current-location-result');
-            const popupLocationText = popupLocationResult.querySelector('p');
-            const popupSelectLocationBtn = document.getElementById('popup-select-current-location');
 
-            if (openPopupBtn) {
-                openPopupBtn.addEventListener('click', () => {
-                    locationPopupOverlay.classList.remove('hidden');
-                    setTimeout(() => locationPopup.classList.remove('scale-95', 'opacity-0'), 10);
-                    loadSavedAddresses();
-                });
+            function openPopup() {
+                if (!locationPopupOverlay) return;
+                locationPopupOverlay.classList.remove('hidden');
+                setTimeout(() => locationPopup.classList.remove('scale-95', 'opacity-0'), 10);
+                loadSavedAddresses();
             }
 
             function closePopup() {
+                if (!locationPopupOverlay) return;
                 locationPopup.classList.add('scale-95', 'opacity-0');
                 setTimeout(() => locationPopupOverlay.classList.add('hidden'), 300);
             }
+
+            if (openPopupBtn) openPopupBtn.addEventListener('click', openPopup);
             if (closePopupBtn) closePopupBtn.addEventListener('click', closePopup);
             if (locationPopupOverlay) locationPopupOverlay.addEventListener('click', (e) => {
                 if (e.target === locationPopupOverlay) closePopup();
             });
 
             function loadSavedAddresses() {
+                const savedAddressesList = document.getElementById('saved-addresses-list');
                 if (!savedAddressesList) return;
                 savedAddressesList.innerHTML = '<div class="text-center text-gray-500 py-4">Đang tải...</div>';
                 fetch('@Url.Action("GetUserAddressesJson", "Account")')
@@ -208,96 +518,33 @@
                         savedAddressesList.innerHTML = '';
                         if (data.length > 0) {
                             data.forEach(addr => {
-                                const addrElement = document.createElement('button');
-                                addrElement.className = 'w-full flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left';
-                                addrElement.innerHTML = `
-                                    <i data-lucide="home" class="h-5 w-5 text-gray-500"></i>
-                                    <div class="flex-1">
-                                        <p class="font-medium text-gray-900">${addr.tenNguoiNhan}</p>
-                                        <p class="text-sm text-gray-600">${addr.diaChiCuThe}</p>
-                                    </div>`;
-                                addrElement.onclick = () => selectAddress(addr.diaChiCuThe);
-                                savedAddressesList.appendChild(addrElement);
+                                const btn = document.createElement('button');
+                                btn.className = 'w-full flex items-center space-x-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left';
+                                btn.innerHTML = `<i data-lucide="home" class="h-5 w-5 text-gray-500"></i><div class="flex-1"><p class="font-medium text-gray-900">${addr.tenNguoiNhan}</p><p class="text-sm text-gray-600">${addr.diaChiCuThe}</p></div>`;
+                                btn.onclick = () => selectAddress(addr.diaChiCuThe);
+                                savedAddressesList.appendChild(btn);
                             });
                         } else {
-                            savedAddressesList.innerHTML = '<p class="text-sm text-gray-500 text-center">Bạn chưa có địa chỉ nào. Hãy thêm trong trang cá nhân.</p>';
+                            savedAddressesList.innerHTML = '<p class="text-sm text-gray-500 text-center">Bạn chưa có địa chỉ nào.</p>';
                         }
                         lucide.createIcons();
                     });
             }
 
-            function selectAddress(address) {
+            window.selectAddress = function(address) {
                 if (addressDisplay) addressDisplay.textContent = address;
-                fetch('@Url.Action("SetCurrentAddress", "Home")', { // Cần có action này trong HomeController
+                fetch('@Url.Action("SetCurrentAddress", "Home")', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', '@Html.AntiForgeryToken()': '@ViewData["AntiForgeryToken"]' },
                     body: JSON.stringify({ address: address })
                 });
                 closePopup();
             }
-
-            if (popupGetLocationBtn) {
-                popupGetLocationBtn.addEventListener('click', function () {
-                    const originalButtonHTML = this.innerHTML;
-                    if (navigator.geolocation) {
-                        this.innerHTML = '<div class="animate-spin rounded-full h-5 w-5 border-b-2 border-red-700 mx-auto"></div>';
-                        this.disabled = true;
-
-                        navigator.geolocation.getCurrentPosition(
-                            (position) => {
-                                const lat = position.coords.latitude;
-                                const lon = position.coords.longitude;
-
-                                fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&accept-language=vi`)
-                                    .then(response => response.json())
-                                    .then(data => {
-                                        if (data && data.display_name) {
-                                            popupLocationText.textContent = data.display_name;
-                                            popupLocationResult.classList.remove('hidden');
-                                        } else {
-                                            toastr.error('Không thể tìm thấy địa chỉ từ vị trí này.');
-                                        }
-                                    })
-                                    .catch(err => toastr.error('Lỗi khi lấy thông tin địa chỉ.'))
-                                    .finally(() => {
-                                        this.innerHTML = originalButtonHTML;
-                                        this.disabled = false;
-                                        lucide.createIcons();
-                                    });
-                            },
-                            (error) => {
-                                let errorMessage = 'Không thể lấy vị trí.';
-                                if (error.code === error.PERMISSION_DENIED) {
-                                    errorMessage = "Bạn đã từ chối yêu cầu truy cập vị trí.";
-                                }
-                                toastr.error(errorMessage);
-                                this.innerHTML = originalButtonHTML;
-                                this.disabled = false;
-                                lucide.createIcons();
-                            }
-                        );
-                    } else {
-                        toastr.error('Trình duyệt của bạn không hỗ trợ định vị.');
-                    }
-                });
-            }
-
-            if (popupSelectLocationBtn) {
-                popupSelectLocationBtn.addEventListener('click', () => {
-                    if (popupLocationText.textContent) {
-                        selectAddress(popupLocationText.textContent);
-                    }
-                });
-            }
-
-            lucide.createIcons();
         });
 
-        // Hàm cập nhật số lượng giỏ hàng
         function updateCartCount() {
             const cartCountElement = document.getElementById('cart-count');
             if (!cartCountElement) return;
-
             fetch('@Url.Action("GetCartCount", "Cart")')
                 .then(response => response.json())
                 .then(data => {
@@ -305,15 +552,45 @@
                         cartCountElement.textContent = data.count;
                         cartCountElement.classList.remove('hidden');
                     } else {
-                        cartCountElement.textContent = '0';
                         cartCountElement.classList.add('hidden');
                     }
-                })
-                .catch(error => console.error('Unable to get cart count.', error));
+                });
         }
 
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button')?.addEventListener('click', function() {
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Update cart count on page load
+        updateCartCount();
+
+        // Navbar scroll effect
+        const navbar = document.getElementById('navbar');
+        let lastScrollY = window.scrollY;
+
+        window.addEventListener('scroll', () => {
+            const currentScrollY = window.scrollY;
+            
+            if (currentScrollY > 100) {
+                navbar.classList.remove('navbar-transparent');
+                navbar.classList.add('navbar-blur');
+            } else {
+                navbar.classList.remove('navbar-blur');
+                navbar.classList.add('navbar-transparent');
+            }
+            
+            lastScrollY = currentScrollY;
+        });
     </script>
 
+    <!-- Load site.js -->
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

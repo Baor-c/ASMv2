@@ -1,0 +1,47 @@
+﻿@model IEnumerable<ASM1.Models.MonAn>
+
+<table class="w-full">
+    <thead class="bg-gray-50">
+        <tr>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sản phẩm</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Danh mục</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Giá</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+        </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200">
+        @foreach (var item in Model)
+        {
+                <tr>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-4">
+                        @if (item.HinhAnh != null && item.HinhAnh.Length > 0)
+                        {
+                                    <img src="data:image/png;base64,@Convert.ToBase64String(item.HinhAnh)" alt="@item.TenMonAn" class="w-12 h-12 rounded-lg object-cover" />
+                        }
+                        else
+                        {
+                                    <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400">
+                                        <i data-lucide="image-off" class="h-6 w-6"></i>
+                                    </div>
+                        }
+                            <div>
+                                <p class="font-medium text-gray-900">@item.TenMonAn</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm">@item.LoaiMonAn.TenLoai</td>
+                    <td class="px-6 py-4 font-semibold text-red-600">@item.Gia.ToString("N0")đ</td>
+                    <td class="px-6 py-4">
+                        <div class="flex space-x-3">
+                        @* Thêm class 'edit-btn' và data-id để JavaScript nhận diện *@
+                            <a href="javascript:void(0)" class="text-blue-600 hover:text-blue-800 edit-btn" data-id="@item.MaMonAn" title="Sửa"><i data-lucide="edit" class="h-4 w-4"></i></a>
+                            <a asp-action="Delete" asp-route-id="@item.MaMonAn" class="text-red-600 hover:text-red-800" title="Xóa"><i data-lucide="trash-2" class="h-4 w-4"></i></a>
+                        </div>
+                    </td>
+                </tr>
+        }
+    </tbody>
+</table>
+
+@* Thêm code phân trang vào đây nếu có *@

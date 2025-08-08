@@ -1,0 +1,103 @@
+﻿@model IEnumerable<ASM1.Models.LoaiMonAn>
+@{
+    ViewData["Title"] = "Quản lý Danh mục";
+}
+
+<!-- Vùng chứa cho modal sẽ được chèn vào đây bằng JavaScript -->
+<div id="modal-placeholder"></div>
+
+<div class="bg-white rounded-lg shadow-sm">
+    <div class="p-6 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="text-xl font-semibold text-gray-800">Danh sách Danh mục</h2>
+        <button id="add-btn" data-url="@Url.Action("CreatePartial")" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2">
+            <i data-lucide="plus" class="h-4 w-4"></i>
+            <span>Thêm danh mục</span>
+        </button>
+    </div>
+
+    <div class="p-6">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @foreach (var category in Model)
+            {
+                    <div class="border rounded-lg p-4 flex flex-col justify-between hover:shadow-md">
+                        <div>
+                            <h3 class="font-semibold text-lg">@category.TenLoai</h3>
+                        </div>
+                        <div class="flex space-x-2 mt-4">
+                            <button data-url="@Url.Action("EditPartial", new { id = category.MaLoai })" class="edit-btn flex-1 bg-blue-500 text-white text-sm py-2 px-3 rounded-lg hover:bg-blue-600 flex items-center justify-center space-x-1">
+                                <i data-lucide="edit" class="h-4 w-4"></i>
+                                <span>Sửa</span>
+                            </button>
+                            <a asp-action="Delete" asp-route-id="@category.MaLoai" class="flex-1 bg-red-500 text-white text-sm py-2 px-3 rounded-lg hover:bg-red-600 flex items-center justify-center space-x-1">
+                                <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                <span>Xóa</span>
+                            </a>
+                        </div>
+                    </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            var placeholder = $('#modal-placeholder');
+
+            // Gán sự kiện click cho các nút Thêm/Sửa (kể cả các nút được tạo động)
+            $(document).on('click', 'button[data-url]', function () {
+                var url = $(this).data('url');
+                $.get(url).done(function (data) {
+                    var formAction = url.replace('Partial', '');
+                    var title = url.includes('Create') ? 'Thêm Danh mục mới' : 'Chỉnh sửa Danh mục';
+                    placeholder.html(createModalHtml(title, data, formAction));
+                    placeholder.find('.modal').removeClass('hidden');
+                });
+            });
+
+            // Xử lý sự kiện submit của form trong modal
+            placeholder.on('submit', '#modal-form', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'post',
+                    data: form.serialize()
+                }).done(function (response) {
+                    if (response.success) {
+                        location.reload(); // Tải lại trang để thấy thay đổi
+                    } else {
+                        // Nếu có lỗi validation, thay thế nội dung modal bằng form mới có chứa thông báo lỗi
+                        placeholder.find('.modal-body').html(response);
+                    }
+                }).fail(function () {
+                    toastr.error('Đã có lỗi xảy ra, vui lòng thử lại.');
+                });
+            });
+
+            // Xử lý sự kiện đóng modal
+            placeholder.on('click', '[data-dismiss="modal"]', function () {
+                placeholder.find('.modal').addClass('hidden').remove();
+            });
+
+            // Hàm helper để tạo HTML cho modal
+            function createModalHtml(title, body, formAction) {
+                return `<div class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 animate-fade-in">
+                            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg animate-slide-up">
+                                <div class="p-6 border-b flex justify-between items-center">
+                                    <h3 class="text-xl font-semibold">${title}</h3>
+                                    <button data-dismiss="modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+                                </div>
+                                <form id="modal-form" action="${formAction}" method="post">
+                                    <div class="modal-body p-6">${body}</div>
+                                    <div class="p-6 bg-gray-50 rounded-b-lg flex justify-end space-x-3">
+                                        <button type="button" data-dismiss="modal" class="border px-6 py-2 rounded-lg hover:bg-gray-50">Hủy</button>
+                                        <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">Lưu</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>`;
+            }
+        });
+    </script>
+}

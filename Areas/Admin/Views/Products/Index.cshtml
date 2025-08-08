@@ -1,0 +1,368 @@
+﻿@using FastFoodApp.Areas.Admin.Models
+@model PaginatedList<ASM1.Models.MonAn>
+@{
+    ViewData["Title"] = "Quản lý Sản phẩm";
+}
+
+<div class="bg-white rounded-lg shadow-sm">
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold text-gray-800">Danh sách Sản phẩm</h2>
+            <button id="createProductBtn" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors flex items-center space-x-2">
+                <i data-lucide="plus" class="h-4 w-4"></i>
+                <span>Thêm sản phẩm</span>
+            </button>
+        </div>
+
+        <!-- Sử dụng partial view cho tìm kiếm -->
+        <partial name="_AdminProductSearch" model="@ViewData["CurrentSearchTerm"]?.ToString()" />
+    </div>
+
+    <div class="overflow-x-auto" id="productsTableContainer">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hình ảnh</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <a asp-action="Index" 
+                           asp-route-sortOrder="@ViewData["NameSortParm"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-categoryFilter="@ViewData["CurrentCategoryFilter"]"
+                           asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                           asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                           class="flex items-center space-x-1 hover:text-red-600">
+                            <span>Sản phẩm</span>
+                            <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <a asp-action="Index" 
+                           asp-route-sortOrder="@ViewData["CategorySortParm"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-categoryFilter="@ViewData["CurrentCategoryFilter"]"
+                           asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                           asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                           class="flex items-center space-x-1 hover:text-red-600">
+                            <span>Loại</span>
+                            <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <a asp-action="Index" 
+                           asp-route-sortOrder="@ViewData["PriceSortParm"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-categoryFilter="@ViewData["CurrentCategoryFilter"]"
+                           asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                           asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                           class="flex items-center space-x-1 hover:text-red-600">
+                            <span>Giá</span>
+                            <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @foreach (var product in Model)
+                {
+                    <tr>
+                        <td class="px-6 py-4">
+                            @if (product.HinhAnh != null)
+                            {
+                                <img src="data:image/jpeg;base64,@Convert.ToBase64String(product.HinhAnh)" 
+                                     class="h-16 w-16 object-cover rounded-lg" alt="@product.TenMonAn">
+                            }
+                            else
+                            {
+                                <div class="h-16 w-16 bg-gray-200 rounded-lg flex items-center justify-center">
+                                    <i data-lucide="image" class="h-6 w-6 text-gray-400"></i>
+                                </div>
+                            }
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="font-medium text-gray-900">@product.TenMonAn</p>
+                            <p class="text-sm text-gray-600">@product.MoTa</p>
+                        </td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                @product.LoaiMonAn?.TenLoai
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm font-medium text-gray-900">
+                            @product.Gia.ToString("N0") VNĐ
+                        </td>
+                        <td class="px-6 py-4">
+                            <div class="flex space-x-3">
+                                <button data-product-id="@product.MaMonAn" class="editProductBtn text-blue-600 hover:text-blue-800" title="Sửa">
+                                    <i data-lucide="edit" class="h-4 w-4"></i>
+                                </button>
+                                <a asp-action="Details" asp-route-id="@product.MaMonAn" class="text-gray-600 hover:text-gray-800" title="Chi tiết">
+                                    <i data-lucide="eye" class="h-4 w-4"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@product.MaMonAn" class="text-red-600 hover:text-red-800" title="Xóa">
+                                    <i data-lucide="trash-2" class="h-4 w-4"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phân trang -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Hiển thị từ <span class="font-medium">@((Model.PageIndex - 1) * 10 + 1)</span> đến <span class="font-medium">@(Math.Min(Model.PageIndex * 10, Model.Count))</span> của <span class="font-medium">@Model.Count</span> kết quả
+                </div>
+                <div class="flex space-x-1">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <a asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageIndex - 1)"
+                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-categoryFilter="@ViewData["CurrentCategoryFilter"]"
+                           asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                           asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">Trước</a>
+                    }
+
+                    @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                    {
+                        @if (i == Model.PageIndex)
+                        {
+                            <span class="px-3 py-2 text-sm bg-red-600 text-white border border-red-600 rounded-md">@i</span>
+                        }
+                        else
+                        {
+                            <a asp-action="Index" 
+                               asp-route-pageNumber="@i"
+                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                               asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                               asp-route-categoryFilter="@ViewData["CurrentCategoryFilter"]"
+                               asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                               asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">@i</a>
+                        }
+                    }
+
+                    @if (Model.HasNextPage)
+                    {
+                        <a asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageIndex + 1)"
+                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-categoryFilter="@ViewData["CurrentCategoryFilter"]"
+                           asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                           asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">Sau</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@* ---- BẮT ĐẦU: CẤU TRÚC MODAL ---- *@
+<div id="productModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl transform transition-all">
+        <div class="p-5 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-medium text-gray-900" id="modalTitle"></h3>
+            <button id="closeModalBtn" class="text-gray-400 hover:text-gray-600">
+                <i data-lucide="x" class="h-6 w-6"></i>
+            </button>
+        </div>
+        <div class="p-6" id="modalBody">
+            @* Nội dung form từ _ProductForm.cshtml sẽ được tải vào đây *@
+        </div>
+        <div class="px-6 py-4 bg-gray-50 text-right">
+            <button type="button" id="cancelModalBtn" class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 mr-2">Hủy</button>
+            <button type="submit" id="saveModalBtn" form="productForm" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">Lưu</button>
+        </div>
+    </div>
+</div>
+@* ---- KẾT THÚC: CẤU TRÚC MODAL ---- *@
+
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const modal = $('#productModal');
+            const modalTitle = $('#modalTitle');
+            const modalBody = $('#modalBody');
+            const createBtn = $('#createProductBtn');
+            const closeModalBtn = $('#closeModalBtn');
+            const cancelModalBtn = $('#cancelModalBtn');
+            const saveBtn = $('#saveModalBtn');
+
+            // Hàm để mở modal
+            function openModal() {
+                modal.removeClass('hidden').addClass('flex');
+                lucide.createIcons();
+            }
+
+            // Hàm để đóng modal
+            function closeModal() {
+                modal.addClass('hidden').removeClass('flex');
+                modalBody.html('');
+            }
+
+            // Mở modal để TẠO sản phẩm
+            createBtn.on('click', function () {
+                console.log('Create button clicked');
+                modalTitle.text('Thêm sản phẩm mới');
+                $.get('@Url.Action("CreatePartial", "Products")')
+                    .done(function (data) {
+                        console.log('Create form loaded');
+                        modalBody.html(`<form id="productForm" data-action="@Url.Action("Create", "Products")" method="post" enctype="multipart/form-data">${data}</form>`);
+                        openModal();
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error loading create form:', error);
+                        alert('Không thể tải form tạo sản phẩm');
+                    });
+            });
+
+            // Mở modal để SỬA sản phẩm
+            $(document).on('click', '.editProductBtn', function () {
+                const productId = $(this).data('product-id');
+                console.log('Edit button clicked for product:', productId);
+                modalTitle.text('Chỉnh sửa sản phẩm');
+                $.get(`@Url.Action("EditPartial", "Products")/${productId}`)
+                    .done(function (data) {
+                        console.log('Edit form loaded');
+                        modalBody.html(`<form id="productForm" data-action="@Url.Action("Edit", "Products")/${productId}" method="post" enctype="multipart/form-data">${data}</form>`);
+                        openModal();
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('Error loading edit form:', error);
+                        alert('Không thể tải form chỉnh sửa sản phẩm');
+                    });
+            });
+
+            // Đóng modal
+            closeModalBtn.on('click', closeModal);
+            cancelModalBtn.on('click', closeModal);
+
+            // Xử lý submit form
+            saveBtn.on('click', function (e) {
+                e.preventDefault();
+                console.log('Products Index: Save button clicked');
+                
+                const form = $('#productForm');
+                if (form.length === 0) {
+                    console.error('Products Index: Form not found');
+                    alert('Không tìm thấy form');
+                    return;
+                }
+
+                const actionUrl = form.data('action');
+                console.log('Products Index: Action URL:', actionUrl);
+
+                if (!actionUrl) {
+                    console.error('Products Index: No action URL found');
+                    alert('Không tìm thấy URL xử lý');
+                    return;
+                }
+
+                // Tạo FormData từ form để đảm bảo file upload được xử lý đúng
+                const formData = new FormData(form[0]);
+                
+                // Đảm bảo thêm file hình ảnh vào FormData
+                const fileInput = form.find('input[type="file"]')[0];
+                if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                    console.log('Products Index: File found:', fileInput.files[0].name);
+                    console.log('Products Index: File size:', fileInput.files[0].size);
+                    console.log('Products Index: File type:', fileInput.files[0].type);
+                    formData.set('HinhAnhFile', fileInput.files[0]);
+                } else {
+                    console.log('Products Index: No file selected');
+                    // Log the file input element to debug
+                    console.log('Products Index: File input element:', fileInput);
+                }
+                
+                console.log('Products Index: FormData created, logging contents:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(`Products Index: FormData - ${key}:`, value instanceof File ? value.name : value);
+                }
+
+                // Gửi request
+                $.ajax({
+                    url: actionUrl,
+                    type: 'POST',
+                    data: formData,
+                    processData: false, // Quan trọng cho file upload
+                    contentType: false, // Quan trọng cho file upload
+                    beforeSend: function() {
+                        saveBtn.prop('disabled', true).text('Đang lưu...');
+                        console.log('Sending request...');
+                    },
+                    success: function (response) {
+                        console.log('Response received:', response);
+                        console.log('Response type:', typeof response);
+                        
+                        // Kiểm tra nếu response là JSON object với success property
+                        if (typeof response === 'object' && response.success === true) {
+                            console.log('Success!');
+                            closeModal();
+                            location.reload();
+                        } 
+                        // Kiểm tra nếu response là string (HTML) hoặc JSON object mà không có success property
+                        else {
+                            console.log('Validation errors or HTML response, updating form');
+                            const currentAction = form.data('action');
+                            // Nếu response là string HTML
+                            if (typeof response === 'string') {
+                                modalBody.html(`<form id="productForm" data-action="${currentAction}" method="post" enctype="multipart/form-data">${response}</form>`);
+                            } else {
+                                // Nếu response là object nhưng không success
+                                console.log('Unexpected response format:', response);
+                                alert('Có lỗi không xác định xảy ra');
+                            }
+                            lucide.createIcons();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('AJAX Error:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error
+                        });
+                        
+                        let errorMessage = `Có lỗi xảy ra: ${xhr.status} - ${xhr.statusText}`;
+                        try {
+                            // Try to parse error response as JSON
+                            const jsonResponse = JSON.parse(xhr.responseText);
+                            if (jsonResponse && jsonResponse.message) {
+                                errorMessage = jsonResponse.message;
+                            }
+                        } catch (e) {
+                            console.log('Error response is not JSON:', e);
+                        }
+                        
+                        alert(errorMessage);
+                    },
+                    complete: function() {
+                        saveBtn.prop('disabled', false).text('Lưu');
+                        console.log('Request completed');
+                    }
+                });
+            });
+
+            // Đóng modal khi click bên ngoài
+            modal.on('click', function (e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+
+            // Debug: Log khi trang load xong
+            console.log('Products page loaded, modal initialized');
+        });
+    </script>
+}

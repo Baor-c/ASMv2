@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
-
+using ASM1.Models;
+namespace ASM1.Models;
 public class LoaiMonAn
 {
     [Key]

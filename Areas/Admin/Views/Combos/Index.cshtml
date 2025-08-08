@@ -1,0 +1,295 @@
+﻿@using FastFoodApp.Areas.Admin.Models
+@model PaginatedList<ASM1.Models.Combo>
+@{
+    ViewData["Title"] = "Quản lý Combo";
+}
+
+<div id="modal-placeholder"></div>
+
+<div class="bg-white rounded-lg shadow-sm">
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold text-gray-800">Danh sách Combo</h2>
+            <button id="add-btn" data-url="@Url.Action("CreatePartial")" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2">
+                <i data-lucide="plus" class="h-4 w-4"></i>
+                <span>Thêm Combo</span>
+            </button>
+        </div>
+
+        <!-- Bộ lọc tìm kiếm nâng cao -->
+        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <form method="get" asp-action="Index" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Tìm kiếm -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                        <input type="text" name="searchTerm" value="@ViewData["CurrentSearchTerm"]" 
+                               placeholder="Tên combo, mô tả, ID..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    </div>
+
+                    <!-- Giá từ -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá từ</label>
+                        <input type="number" name="minPrice" value="@ViewData["CurrentMinPrice"]" 
+                               placeholder="0" step="1000"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    </div>
+
+                    <!-- Giá đến -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Giá đến</label>
+                        <input type="number" name="maxPrice" value="@ViewData["CurrentMaxPrice"]" 
+                               placeholder="999000" step="1000"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+                        <i data-lucide="search" class="h-4 w-4"></i>
+                        <span>Tìm kiếm</span>
+                    </button>
+                    <a asp-action="Index" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center space-x-2">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                        <span>Xóa bộ lọc</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Nút sắp xếp -->
+        <div class="flex space-x-2 mb-4">
+            <a asp-action="Index" 
+               asp-route-sortOrder="@ViewData["NameSortParm"]"
+               asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+               asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+               asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+               class="px-3 py-1 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center space-x-1">
+                <span>Tên combo</span>
+                <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+            </a>
+            <a asp-action="Index" 
+               asp-route-sortOrder="@ViewData["PriceSortParm"]"
+               asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+               asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+               asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+               class="px-3 py-1 text-xs bg-white border border-gray-300 rounded-md hover:bg-gray-50 flex items-center space-x-1">
+                <span>Giá</span>
+                <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+            </a>
+        </div>
+    </div>
+
+    <div class="p-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            @foreach (var combo in Model)
+            {
+                    <div class="border rounded-lg overflow-hidden flex flex-col hover:shadow-lg">
+                    @if (combo.HinhAnh != null && combo.HinhAnh.Length > 0)
+                    {
+                                <img src="data:image/png;base64,@Convert.ToBase64String(combo.HinhAnh)" alt="@combo.TenCombo" class="w-full h-48 object-cover" />
+                    }
+                    else
+                    {
+                        <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+                            <i data-lucide="image" class="h-12 w-12 text-gray-400"></i>
+                        </div>
+                    }
+                        <div class="p-4 flex flex-col flex-grow">
+                            <h3 class="font-semibold text-lg">@combo.TenCombo</h3>
+                            <p class="text-sm text-gray-600 mt-1 flex-grow">@combo.MoTa</p>
+                            <div class="flex items-center justify-between mt-4">
+                                <span class="text-xl font-bold text-red-600">@combo.Gia.ToString("N0")đ</span>
+                                <div class="flex space-x-2">
+                                    <a asp-action="ManageComboItems" asp-route-id="@combo.MaCombo" class="p-2 text-green-600 bg-green-100 rounded-full hover:bg-green-200" title="Quản lý chi tiết"><i data-lucide="list" class="h-4 w-4"></i></a>
+                                    <button data-url="@Url.Action("EditPartial", new { id = combo.MaCombo })" class="edit-btn p-2 text-blue-600 bg-blue-100 rounded-full hover:bg-blue-200" title="Sửa"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                                    <a asp-action="Delete" asp-route-id="@combo.MaCombo" class="p-2 text-red-600 bg-red-100 rounded-full hover:bg-red-200" title="Xóa"><i data-lucide="trash-2" class="h-4 w-4"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+            }
+        </div>
+    </div>
+
+    <!-- Phân trang -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Hiển thị từ <span class="font-medium">@((Model.PageIndex - 1) * 10 + 1)</span> đến <span class="font-medium">@(Math.Min(Model.PageIndex * 10, Model.Count))</span> của <span class="font-medium">@Model.Count</span> kết quả
+                </div>
+                <div class="flex space-x-1">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <a asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageIndex - 1)"
+                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                           asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">Trước</a>
+                    }
+
+                    @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                    {
+                        @if (i == Model.PageIndex)
+                        {
+                            <span class="px-3 py-2 text-sm bg-red-600 text-white border border-red-600 rounded-md">@i</span>
+                        }
+                        else
+                        {
+                            <a asp-action="Index" 
+                               asp-route-pageNumber="@i"
+                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                               asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                               asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                               asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">@i</a>
+                        }
+                    }
+
+                    @if (Model.HasNextPage)
+                    {
+                        <a asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageIndex + 1)"
+                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-minPrice="@ViewData["CurrentMinPrice"]"
+                           asp-route-maxPrice="@ViewData["CurrentMaxPrice"]"
+                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">Sau</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    <script>
+        $(function () {
+            console.log('Combos Index: Document ready');
+            var placeholder = $('#modal-placeholder');
+
+            $(document).on('click', 'button[data-url]', function () {
+                console.log('Combos Index: Button clicked');
+                var url = $(this).data('url');
+                console.log('Combos Index: URL:', url);
+                
+                $.get(url).done(function (data) {
+                    console.log('Combos Index: Partial view loaded successfully');
+                    var formAction = url.replace('Partial', '');
+                    var title = url.includes('Create') ? 'Thêm Combo mới' : 'Chỉnh sửa Combo';
+                    console.log('Combos Index: Form action:', formAction);
+                    console.log('Combos Index: Modal title:', title);
+                    
+                    placeholder.html(createModalHtml(title, data, formAction));
+                    placeholder.find('.modal').removeClass('hidden');
+                    
+                    // Make sure validation is applied
+                    $.validator.unobtrusive.parse('#modal-form');
+                    
+                    console.log('Combos Index: Modal displayed');
+                }).fail(function(xhr, status, error) {
+                    console.error('Combos Index: Failed to load partial view:', error);
+                    console.error('Combos Index: Status:', status);
+                    console.error('Combos Index: Response:', xhr.responseText);
+                });
+            });
+
+            placeholder.on('submit', '#modal-form', function (e) {
+                console.log('Combos Index: Form submission started');
+                e.preventDefault();
+                
+                var form = $(this);
+                var formData = new FormData(this);
+                var formAction = form.attr('action');
+                
+                console.log('Combos Index: Form action URL:', formAction);
+                console.log('Combos Index: FormData created');
+                
+                // Log all form data
+                for (let [key, value] of formData.entries()) {
+                    console.log('Combos Index: FormData -', key + ':', value);
+                }
+
+                $.ajax({
+                    url: formAction,
+                    method: 'post',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    beforeSend: function() {
+                        console.log('Combos Index: AJAX request starting...');
+                    }
+                }).done(function (response) {
+                    console.log('Combos Index: AJAX request completed successfully');
+                    console.log('Combos Index: Response:', response);
+                    console.log('Combos Index: Response type:', typeof response);
+                    
+                    // Kiểm tra nếu response là JSON object với success property
+                    if (typeof response === 'object' && response.success === true) {
+                        console.log('Combos Index: Success response received, reloading page');
+                        location.reload();
+                    } 
+                    // Kiểm tra nếu response là string (HTML) hoặc JSON object mà không có success property
+                    else {
+                        console.log('Combos Index: Validation errors or HTML response, updating modal body');
+                        // Nếu response là string HTML
+                        if (typeof response === 'string') {
+                            placeholder.find('.modal-body').html(response);
+                            
+                            // Reapply client validation
+                            $.validator.unobtrusive.parse('#modal-form');
+                        } else {
+                            // Nếu response là object nhưng không success
+                            console.log('Combos Index: Unexpected response format:', response);
+                            alert('Có lỗi không xác định xảy ra');
+                        }
+                    }
+                }).fail(function(xhr, status, error) {
+                    console.error('Combos Index: AJAX request failed');
+                    console.error('Combos Index: Status:', status);
+                    console.error('Combos Index: Error:', error);
+                    console.error('Combos Index: Response Text:', xhr.responseText);
+                    console.error('Combos Index: Status Code:', xhr.status);
+                    
+                    if (xhr.status === 400) {
+                        console.error('Combos Index: Bad Request - possibly validation or CSRF token issue');
+                    }
+                });
+            });
+
+            placeholder.on('click', '[data-dismiss="modal"]', function () {
+                console.log('Combos Index: Modal dismissed');
+                placeholder.find('.modal').addClass('hidden').remove();
+            });
+
+            function createModalHtml(title, body, formAction) {
+                console.log('Combos Index: Creating modal HTML');
+                return `<div class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                                <div class="p-6 border-b flex justify-between items-center">
+                                    <h3 class="text-xl font-semibold">${title}</h3>
+                                    <button data-dismiss="modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+                                </div>
+                                <form id="modal-form" action="${formAction}" method="post" enctype="multipart/form-data">
+                                    <div class="modal-body p-6">${body}</div>
+                                    <div class="p-6 bg-gray-50 flex justify-end space-x-3">
+                                        <button type="button" data-dismiss="modal" class="border px-6 py-2 rounded-lg hover:bg-gray-50">Hủy</button>
+                                        <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">Lưu</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>`;
+            }
+        });
+    </script>
+}

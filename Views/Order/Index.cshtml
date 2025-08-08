@@ -23,6 +23,9 @@
                 return ("clock", status, "bg-gray-100 text-gray-800");
         }
     };
+    
+    // Helper to check if an order can be canceled
+    Func<string, bool> CanCancelOrder = (status) => status == "Chờ xử lý" || status == "Đang chuẩn bị";
 }
 
 <div class="min-h-screen bg-gray-50 py-8">
@@ -77,6 +80,7 @@
                 @foreach (var order in Model)
                 {
                     var statusDetails = GetStatusDetails(order.TrangThai);
+                    var canCancel = CanCancelOrder(order.TrangThai);
                             <div class="bg-white rounded-xl shadow-lg overflow-hidden animate-slide-up">
                                 <!-- Order Header -->
                                 <div class="p-6 border-b border-gray-200">
@@ -96,10 +100,22 @@
                                                     <span>@statusDetails.text</span>
                                                 </div>
                                             </div>
-                                            <a asp-controller="Order" asp-action="Details" asp-route-id="@order.MaHoaDon" class="flex items-center space-x-1 text-red-600 hover:text-red-700 font-medium">
-                                                <i data-lucide="eye" class="h-4 w-4"></i>
-                                                <span>Chi tiết</span>
-                                            </a>
+                                            <div class="flex items-center space-x-2">
+                                                <a asp-controller="Order" asp-action="Details" asp-route-id="@order.MaHoaDon" class="flex items-center space-x-1 text-blue-600 hover:text-blue-700 font-medium">
+                                                    <i data-lucide="eye" class="h-4 w-4"></i>
+                                                    <span>Chi tiết</span>
+                                                </a>
+                                                
+                                                @if (canCancel)
+                                                {
+                                                    <button type="button" 
+                                                            onclick="openCancelModal(@order.MaHoaDon)"
+                                                            class="flex items-center space-x-1 text-red-600 hover:text-red-700 font-medium">
+                                                        <i data-lucide="x-circle" class="h-4 w-4"></i>
+                                                        <span>Hủy đơn</span>
+                                                    </button>
+                                                }
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -163,7 +179,50 @@
     </div>
 </div>
 
-<!-- Script để kích hoạt icons -->
+<!-- Cancellation Modal -->
+<div id="cancelOrderModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 md:mx-auto">
+        <div class="text-center mb-6">
+            <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <i data-lucide="alert-triangle" class="h-8 w-8 text-red-600"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900">Xác nhận hủy đơn hàng</h3>
+            <p class="text-gray-600 mt-2">
+                Bạn có chắc chắn muốn hủy đơn hàng #<span id="orderIdToCancel"></span> không?<br>
+                Hành động này không thể hoàn tác.
+            </p>
+        </div>
+        
+        <div class="flex space-x-4">
+            <button type="button" class="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium text-gray-800 transition-colors"
+                    onclick="closeCancelModal()">
+                Đóng
+            </button>
+            <form id="cancelOrderForm" asp-action="Cancel" method="post" class="flex-1">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="w-full py-2 px-4 bg-red-500 hover:bg-red-600 rounded-lg font-medium text-white transition-colors">
+                    Xác nhận hủy
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Script để kích hoạt icons và modal -->
 <script>
     lucide.createIcons();
+    
+    function openCancelModal(orderId) {
+        document.getElementById('orderIdToCancel').textContent = orderId;
+        document.getElementById('cancelOrderForm').setAttribute('action', '/Order/Cancel/' + orderId);
+        document.getElementById('cancelOrderModal').classList.remove('hidden');
+        document.getElementById('cancelOrderModal').classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+    }
+    
+    function closeCancelModal() {
+        document.getElementById('cancelOrderModal').classList.add('hidden');
+        document.getElementById('cancelOrderModal').classList.remove('flex');
+        document.body.classList.remove('overflow-hidden');
+    }
 </script>

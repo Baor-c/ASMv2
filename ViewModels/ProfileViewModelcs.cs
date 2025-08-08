@@ -8,15 +8,15 @@ namespace FastFoodApp.ViewModels
     public class ProfileViewModel
     {
         public int MaNguoiDung { get; set; }
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Họ tên không được để trống")]
         [Display(Name = "Họ và Tên")]
-        public string HoTen { get; set; }
+        public string HoTen { get; set; } = string.Empty;
 
         [Display(Name = "Số điện thoại")]
         [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        public string SoDienThoai { get; set; }
+        public string? SoDienThoai { get; set; }
 
         [Display(Name = "Ngày sinh")]
         [DataType(DataType.Date)]
@@ -25,10 +25,10 @@ namespace FastFoodApp.ViewModels
         public int TotalOrders { get; set; }
         public decimal TotalSpent { get; set; }
         public int CompletedOrders { get; set; }
-        public CapThanhVien CurrentMembership { get; set; }
-        public List<CapThanhVien> AllMemberships { get; set; }
+        public CapThanhVien? CurrentMembership { get; set; }
+        public List<CapThanhVien> AllMemberships { get; set; } = new List<CapThanhVien>();
 
-        public CapThanhVien NextMembership { get; set; }
+        public CapThanhVien? NextMembership { get; set; }
         public double ProgressToNextLevel { get; set; }
 
         public List<DiaChiNguoiDung> Addresses { get; set; }

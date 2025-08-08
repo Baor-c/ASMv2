@@ -1,0 +1,18 @@
+﻿@model ASM1.Models.MonAn
+@{
+    ViewData["Title"] = "Thêm Sản phẩm mới";
+}
+
+<div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-sm">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6">Thông tin Sản phẩm</h2>
+    <form asp-action="Create" method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        <div class="space-y-6">
+            <partial name="_CreateOrEdit" model="Model" />
+        </div>
+        <div class="flex items-center justify-end space-x-4 pt-6 mt-6 border-t">
+            <a asp-action="Index" class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50">Hủy</a>
+            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700">Lưu</button>
+        </div>
+    </form>
+</div>

@@ -1,123 +1,1303 @@
-﻿@model FastFoodApp.ViewModels.ShopViewModel
+﻿ @model FastFoodApp.ViewModels.ShopViewModel
 @{
-    ViewData["Title"] = "Thực đơn";
+    ViewData["Title"] = "Thực đơn - SnapBite";
 }
 
-<div class="min-h-screen bg-gray-50 py-8">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <!-- Page Header -->
-        <div class="mb-8 animate-fade-in">
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-                Thực Đơn FastBite
-            </h1>
-            <p class="text-lg text-gray-600">
-                Khám phá hàng trăm món ăn ngon được chế biến tươi mỗi ngày.
-            </p>
+<!-- Hero Banner -->
+<section class="relative bg-gradient-to-r from-brand-600 to-accent-600 text-white py-20">
+    <div class="absolute inset-0 opacity-10">
+        <div class="absolute top-6 left-10 text-4xl animate-bounce-slow">🍔</div>
+        <div class="absolute top-12 right-20 text-3xl animate-bounce-slow" style="animation-delay: 0.5s;">🍟</div>
+        <div class="absolute bottom-8 left-20 text-3xl animate-bounce-slow" style="animation-delay: 1s;">🥤</div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-bold mb-4">
+            Thực Đơn 
+            <span class="bg-gradient-to-r from-yellow-300 to-yellow-400 bg-clip-text text-transparent">SnapBite</span>
+        </h1>
+        <p class="text-xl opacity-90 max-w-2xl mx-auto">
+            Khám phá hàng trăm món ăn ngon từ burger, pizza đến đồ uống thơm ngon
+        </p>
+    </div>
+</section>
+
+<!-- Main Container with Modern Layout -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- Search and Filter Bar -->
+    <div class="bg-white rounded-2xl shadow-lg border border-gray-100 p-6 mb-8">
+        <div class="flex flex-col lg:flex-row gap-4">
+            <!-- Use Partial View for Search -->
+            <partial name="_ProductSearch" model="@Model" />
+
+            <!-- Sort Dropdown -->
+            <div class="lg:w-64">
+                <form asp-action="Index" method="get" id="sortForm">
+                    <!-- Preserve other filters -->
+                    <input type="hidden" name="searchTerm" value="@Model.SearchTerm" />
+                    @foreach (var categoryId in Model.CategoryIds)
+                    {
+                        <input type="hidden" name="categoryIds" value="@categoryId" />
+                    }
+                    <input type="hidden" name="minPrice" value="@Model.MinPrice" />
+                    <input type="hidden" name="maxPrice" value="@Model.MaxPrice" />
+                    @if (Model.IsPopular.HasValue)
+                    {
+                        <input type="hidden" name="isPopular" value="@Model.IsPopular" />
+                    }
+                    @if (Model.IsNew.HasValue)
+                    {
+                        <input type="hidden" name="isNew" value="@Model.IsNew" />
+                    }
+                    
+                    <select name="sortBy" onchange="this.form.submit()" 
+                            class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent text-gray-900">
+                        <option value="default" selected="@(Model.SortBy == "default")">Mặc định</option>
+                        <option value="price_asc" selected="@(Model.SortBy == "price_asc")">Giá thấp đến cao</option>
+                        <option value="price_desc" selected="@(Model.SortBy == "price_desc")">Giá cao đến thấp</option>
+                        <option value="name_asc" selected="@(Model.SortBy == "name_asc")">Tên A-Z</option>
+                        <option value="name_desc" selected="@(Model.SortBy == "name_desc")">Tên Z-A</option>
+                    </select>
+                </form>
+            </div>
+
+            <!-- Filter Toggle Button -->
+            <button id="toggleFilter" class="px-6 py-3 bg-gradient-to-r from-brand-600 to-brand-700 text-white rounded-xl hover:from-brand-700 hover:to-brand-800 transition-all duration-300 flex items-center space-x-2 font-medium shadow-lg hover:shadow-xl">
+                <i data-lucide="sliders-horizontal" class="h-5 w-5"></i>
+                <span>Bộ lọc</span>
+            </button>
         </div>
 
-        <!-- Search & Filter Section -->
-        <div class="bg-white p-6 rounded-xl shadow-lg mb-8 animate-slide-up">
-            <!-- Search Bar -->
-            <form asp-action="Index" method="get" class="mb-6">
-                <div class="relative">
-                    <input type="text" name="searchTerm" value="@Model.SearchTerm"
-                           placeholder="Tìm kiếm theo tên món, mô tả..."
-                           class="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-red-500 text-lg" />
-                    <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400"></i>
-                    <button type="submit" class="absolute right-2 top-1/2 transform -translate-y-1/2 bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors font-medium">
-                        Tìm
+        <!-- Active Filters Display -->
+        @if (Model.CategoryIds.Any() || Model.MinPrice.HasValue || Model.MaxPrice.HasValue)
+        {
+            <div class="mt-4 pt-4 border-t border-gray-200">
+                <div class="flex items-center flex-wrap gap-2">
+                    <span class="text-sm font-medium text-gray-700">Bộ lọc đang áp dụng:</span>
+                    
+                    @foreach (var categoryId in Model.CategoryIds)
+                    {
+                        var category = Model.Categories.FirstOrDefault(c => c.MaLoai == categoryId);
+                        if (category != null)
+                        {
+                            <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-brand-100 text-brand-800">
+                                @category.TenLoai
+                                <button type="button" onclick="removeFilter('categoryIds', '@categoryId')" class="ml-1 text-brand-600 hover:text-brand-800">
+                                    <i data-lucide="x" class="h-3 w-3"></i>
+                                </button>
+                            </span>
+                        }
+                    }
+
+                    @if (Model.MinPrice.HasValue || Model.MaxPrice.HasValue)
+                    {
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-accent-100 text-accent-800">
+                            Giá: @(Model.MinPrice?.ToString("N0") ?? "0")đ - @(Model.MaxPrice?.ToString("N0") ?? "∞")đ
+                            <button type="button" onclick="removePriceFilter()" class="ml-1 text-accent-600 hover:text-accent-800">
+                                <i data-lucide="x" class="h-3 w-3"></i>
+                            </button>
+                        </span>
+                    }
+
+                    <button type="button" onclick="clearAllFilters()" class="text-sm text-gray-500 hover:text-gray-700 ml-2">
+                        Xóa tất cả
                     </button>
                 </div>
-            </form>
+            </div>
+        }
+    </div>
+    
+    <!-- Sidebar Filter Panel -->
+    <div id="filterSidebar" class="fixed inset-y-0 right-0 z-50 w-72 bg-white shadow-xl transform translate-x-full transition-transform duration-300 ease-in-out">
+        <!-- Sidebar Header -->
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-800">
+                <i data-lucide="sliders-horizontal" class="h-4 w-4 inline mr-2 text-red-600"></i>
+                Bộ lọc nâng cao
+            </h2>
+            <button id="closeSidebar" class="text-gray-500 hover:text-gray-700">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
 
-            <!-- Category Filters -->
-            <div>
-                <h3 class="text-lg font-semibold text-gray-900 mb-4">Danh mục</h3>
-                <div class="flex flex-wrap gap-3">
-                    <a asp-action="Index" asp-all-route-data="@Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())" asp-route-categoryId=""
-                       class="px-4 py-2 rounded-full font-medium transition-colors flex items-center space-x-2 @(Model.CategoryId == null ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200")">
-                        <span>🍽️</span>
-                        <span>Tất cả</span>
-                    </a>
-                    @foreach (var category in Model.Categories)
+        <!-- Filter Form -->
+        <div class="p-4 h-full overflow-y-auto">
+            <form asp-action="Index" method="get" id="advancedSearchForm" class="space-y-4">
+                
+                <!-- Preserve search term and sort -->
+                <input type="hidden" name="searchTerm" value="@Model.SearchTerm" />
+                <input type="hidden" name="sortBy" value="@Model.SortBy" />
+
+                <!-- Categories Filter -->
+                <div class="pt-3">
+                    <h4 class="text-sm font-medium text-gray-700 flex items-center mb-3">
+                        <i data-lucide="list" class="h-4 w-4 inline mr-2"></i>
+                        Danh mục món ăn
+                        <span class="ml-auto text-xs text-gray-500">(@Model.Categories.Count)</span>
+                    </h4>
+                    <div class="space-y-1 max-h-48 overflow-y-auto border border-gray-200 rounded p-2">
+                        @foreach (var category in Model.Categories)
+                        {
+                            <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded text-sm">
+                                <input type="checkbox" name="categoryIds" value="@category.MaLoai" 
+                                       checked="@(Model.CategoryIds.Contains(category.MaLoai))"
+                                       class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500" />
+                                <span class="text-gray-700">@category.TenLoai</span>
+                            </label>
+                        }
+                    </div>
+                </div>
+
+                <!-- Price Range Filter -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 flex items-center mb-3">
+                        <i data-lucide="dollar-sign" class="h-4 w-4 inline mr-2"></i>
+                        Khoảng giá
+                    </h4>
+                    <div class="space-y-3 p-3 bg-gray-50 rounded">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="number" name="minPrice" id="minPrice" value="@Model.MinPrice" 
+                                   placeholder="Từ" min="@Model.MinPriceAvailable" max="@Model.MaxPriceAvailable"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500" />
+                            <input type="number" name="maxPrice" id="maxPrice" value="@Model.MaxPrice" 
+                                   placeholder="Đến" min="@Model.MinPriceAvailable" max="@Model.MaxPriceAvailable"
+                                   class="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-red-500" />
+                        </div>
+                        <input type="range" id="priceRange" min="@Model.MinPriceAvailable" max="@Model.MaxPriceAvailable" 
+                               value="@(Model.MaxPrice ?? Model.MaxPriceAvailable)" 
+                               class="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer range-slider" />
+                        <div class="flex justify-between text-xs text-gray-500">
+                            <span>@Model.MinPriceAvailable.ToString("N0")đ</span>
+                            <span>@Model.MaxPriceAvailable.ToString("N0")đ</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Product Features Filter -->
+                <div>
+                    <h4 class="text-sm font-medium text-gray-700 flex items-center mb-3">
+                        <i data-lucide="star" class="h-4 w-4 inline mr-2"></i>
+                        Đặc tính sản phẩm
+                    </h4>
+                    <div class="space-y-2">
+                        <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                            <input type="checkbox" name="isPopular" value="true" 
+                                   checked="@(Model.IsPopular == true)"
+                                   class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500" />
+                            <i data-lucide="trending-up" class="h-4 w-4 text-orange-500"></i>
+                            <span class="text-sm text-gray-700">Phổ biến</span>
+                        </label>
+                        
+                        <label class="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded">
+                            <input type="checkbox" name="isNew" value="true" 
+                                   checked="@(Model.IsNew == true)"
+                                   class="w-4 h-4 text-red-600 border-gray-300 rounded focus:ring-red-500" />
+                            <i data-lucide="sparkles" class="h-4 w-4 text-green-500"></i>
+                            <span class="text-sm text-gray-700">Mới nhất</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="sticky bottom-0 bg-white pt-3 border-t border-gray-200 space-y-2">
+                    <div class="text-xs text-gray-500 text-center">
+                        <strong class="text-red-600">@Model.TotalItems</strong> sản phẩm
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <a asp-action="Index" asp-route-searchTerm="@Model.SearchTerm" asp-route-sortBy="@Model.SortBy" 
+                           class="text-center border border-gray-300 text-gray-700 px-3 py-2 text-sm rounded hover:bg-gray-50 transition-colors">
+                            Xóa bộ lọc
+                        </a>
+                        <button type="submit" class="bg-red-600 text-white px-3 py-2 text-sm rounded hover:bg-red-700 transition-colors">
+                            Áp dụng
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Overlay for all screen sizes -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-black bg-opacity-50 z-40 hidden"></div>
+
+    <!-- Main Content Area -->
+    <div class="w-full">
+        <!-- Advanced Sort Options -->
+        <div class="bg-white rounded-lg shadow-sm mb-6 p-4 lg:p-6">
+            <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+                <!-- Quick Filter Options -->
+                <div class="flex-1 max-w-2xl">
+                    <form asp-action="Index" method="get" class="flex gap-3">
+                        <!-- Quick Sort -->
+                        <select name="sortBy" class="px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 min-w-[140px]">
+                            <option value="newest" selected="@(Model.SortBy == "newest")">Mới nhất</option>
+                            <option value="popular" selected="@(Model.SortBy == "popular")">Phổ biến</option>
+                            <option value="rating" selected="@(Model.SortBy == "rating")">Đánh giá cao</option>
+                            <option value="price_asc" selected="@(Model.SortBy == "price_asc")">Giá tăng dần</option>
+                            <option value="price_desc" selected="@(Model.SortBy == "price_desc")">Giá giảm dần</option>
+                        </select>
+
+                        <!-- Apply Button -->
+                        <button type="submit" class="bg-red-600 text-white px-6 py-2.5 rounded-lg hover:bg-red-700 transition-colors">
+                            Áp dụng
+                        </button>
+                        
+                        <!-- Hidden fields to preserve other filters -->
+                        @foreach (var categoryId in Model.CategoryIds)
+                        {
+                            <input type="hidden" name="categoryIds" value="@categoryId" />
+                        }
+                        @if (Model.MinPrice.HasValue)
+                        {
+                            <input type="hidden" name="minPrice" value="@Model.MinPrice" />
+                        }
+                        @if (Model.MaxPrice.HasValue)
+                        {
+                            <input type="hidden" name="maxPrice" value="@Model.MaxPrice" />
+                        }
+                        @if (Model.IsPopular.HasValue)
+                        {
+                            <input type="hidden" name="isPopular" value="@Model.IsPopular" />
+                        }
+                        @if (Model.IsNew.HasValue)
+                        {
+                            <input type="hidden" name="isNew" value="@Model.IsNew" />
+                        }
+                    </form>
+                </div>
+
+                <!-- Advanced Filter Toggle -->
+                <div class="flex items-center gap-3">
+                    <button id="openSidebar" class="bg-gray-100 text-gray-700 px-4 py-2.5 rounded-lg hover:bg-gray-200 transition-colors flex items-center border">
+                        <i data-lucide="filter" class="h-4 w-4 mr-2"></i>
+                        Bộ lọc nâng cao
+                    </button>
+                    <div class="text-sm text-gray-500">
+                        Trang @Model.CurrentPage / @Model.TotalPages
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Bar with Results Info -->
+        <div class="bg-white rounded-lg shadow-sm mb-6 p-4 lg:p-6">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <!-- Results Info -->
+                    <div>
+                        <h3 class="text-xl font-semibold text-gray-800">
+                            Kết quả tìm kiếm 
+                            @if (!string.IsNullOrEmpty(Model.SearchTerm))
+                            {
+                                <span class="text-red-600">cho "@Model.SearchTerm"</span>
+                            }
+                        </h3>
+                        <p class="text-sm text-gray-500">
+                            Hiển thị @((Model.CurrentPage - 1) * Model.PageSize + 1) - @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalItems)) trong @Model.TotalItems sản phẩm
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Active Filters Display -->
+                <div class="flex items-center gap-2">
+                    @if (Model.CategoryIds.Any() || Model.MinPrice.HasValue || Model.MaxPrice.HasValue || Model.IsPopular == true || Model.IsNew == true)
                     {
-                            <a asp-action="Index" asp-all-route-data="@Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())" asp-route-categoryId="@category.MaLoai"
-                               class="px-4 py-2 rounded-full font-medium transition-colors flex items-center space-x-2 @(Model.CategoryId == category.MaLoai ? "bg-red-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200")">
-                                <span>@(category.TenLoai.Contains("Gà") ? "🍗" : category.TenLoai.Contains("Burger") ? "🍔" : category.TenLoai.Contains("Nước") ? "🥤" : "🍟")</span>
-                                <span>@category.TenLoai</span>
-                            </a>
+                        <span class="text-xs text-gray-500">Đang lọc:</span>
+                        @if (Model.CategoryIds.Any())
+                        {
+                            <span class="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">@Model.CategoryIds.Count danh mục</span>
+                        }
+                        @if (Model.MinPrice.HasValue || Model.MaxPrice.HasValue)
+                        {
+                            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">Khoảng giá</span>
+                        }
+                        @if (Model.IsPopular == true)
+                        {
+                            <span class="bg-orange-100 text-orange-800 text-xs px-2 py-1 rounded">Phổ biến</span>
+                        }
+                        @if (Model.IsNew == true)
+                        {
+                            <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Mới nhất</span>
+                        }
+                        <a asp-action="Index" class="text-xs text-gray-500 hover:text-red-600">Xóa tất cả</a>
                     }
                 </div>
             </div>
         </div>
 
-        <!-- Results Info -->
-        <div class="mb-6 animate-fade-in" style="animation-delay: 200ms;">
-            <p class="text-gray-600">
-                Hiển thị <span class="font-semibold text-red-600">@(Model.Products.Count + Model.Combos.Count)</span> kết quả
-                @if (!string.IsNullOrEmpty(Model.SearchTerm))
+        <!-- Products Display -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="p-4 lg:p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Sản phẩm</h2>
+                @if (Model.Products.Any())
                 {
-                        <span> cho "@Model.SearchTerm"</span>
+                    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                        @foreach (var product in Model.Products)
+                        {
+                            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col h-full">
+                                <!-- Product Image -->
+                                <div class="relative aspect-square">
+                                    <a href="javascript:void(0);" onclick="openOptionsModal(@product.MaMonAn, '@product.TenMonAn', '@(product.HinhAnh != null ? Convert.ToBase64String(product.HinhAnh) : "")', @product.Gia)">
+                                        @if (product.HinhAnh != null && product.HinhAnh.Length > 0)
+                                        {
+                                            <img src="data:image/png;base64,@Convert.ToBase64String(product.HinhAnh)" 
+                                                 alt="@product.TenMonAn" 
+                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                        }
+                                        else
+                                        {
+                                            <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                <i data-lucide="image" class="h-8 w-8 text-gray-400"></i>
+                                            </div>
+                                        }
+                                    </a>
+                                    
+                                    <!-- Product badges -->
+                                    <div class="absolute top-2 left-2 flex flex-col space-y-1">
+                                        @if (product.IsNew)
+                                        {
+                                            <span class="bg-green-500 text-white text-xs px-1.5 py-0.5 rounded-full">Mới</span>
+                                        }
+                                        @if (product.IsPopular)
+                                        {
+                                            <span class="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full">Hot</span>
+                                        }
+                                    </div>
+                                    
+                                    <!-- Add to cart button - overlay -->
+                                    <div class="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100">
+                                        <!-- Quick add button -->
+                                        <button onclick="addToCart(@product.MaMonAn)" 
+                                                class="bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-colors">
+                                            <i data-lucide="shopping-cart" class="h-4 w-4"></i>
+                                        </button>
+                                        
+                                        <!-- Options button -->
+                                        <button onclick="openOptionsModal(@product.MaMonAn, '@product.TenMonAn', '@(product.HinhAnh != null ? Convert.ToBase64String(product.HinhAnh) : "")', @product.Gia)"
+                                                class="bg-gray-700 text-white p-2 rounded-full hover:bg-gray-800 transition-colors">
+                                            <i data-lucide="plus" class="h-4 w-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <!-- Product Info -->
+                                <div class="p-3 flex-1 flex flex-col">
+                                    <!-- Title -->
+                                        <h4 class="font-medium text-sm text-gray-800 mb-1 line-clamp-2 leading-tight">
+                                            <a href="javascript:void(0);" onclick="openOptionsModal(@product.MaMonAn, '@product.TenMonAn', '@(product.HinhAnh != null ? Convert.ToBase64String(product.HinhAnh) : "")', @product.Gia)" class="hover:text-red-600 transition-colors">
+                                                @product.TenMonAn
+                                            </a>
+                                        </h4>
+                                    
+                                    <!-- Category -->
+                                    <p class="text-xs text-gray-500 mb-2">@product.LoaiMonAn.TenLoai</p>
+                                    
+                                    <!-- Rating -->
+                                    <div class="flex items-center mb-2">
+                                        <div class="flex items-center space-x-0.5">
+                                            @for (int i = 1; i <= 5; i++)
+                                            {
+                                                <i data-lucide="star" class="h-3 w-3 @(i <= product.Rating ? "text-yellow-400 fill-current" : "text-gray-300")"></i>
+                                            }
+                                        </div>
+                                        <span class="text-xs text-gray-500 ml-1">(@product.ReviewCount)</span>
+                                    </div>
+                                    
+                                    <!-- Price -->
+                                    <div class="mt-auto">
+                                        @if (product.OriginalPrice.HasValue && product.OriginalPrice > product.Gia)
+                                        {
+                                            <p class="text-xs text-gray-500 line-through">@product.OriginalPrice.Value.ToString("N0")đ</p>
+                                        }
+                                        <p class="font-bold text-red-600 text-lg">@product.Gia.ToString("N0")đ</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
                 }
-            </p>
+                else
+                {
+                    <div class="text-center py-12">
+                        <i data-lucide="search-x" class="h-16 w-16 text-gray-400 mx-auto mb-4"></i>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-2">Không tìm thấy sản phẩm</h3>
+                        <p class="text-gray-500 mb-4">Thử điều chỉnh bộ lọc hoặc từ khóa tìm kiếm của bạn</p>
+                        <a asp-action="Index" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                            Xem tất cả sản phẩm
+                        </a>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Combos Display -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="p-4 lg:p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Combo</h2>
+                @if (Model.Combos.Any())
+                {
+                    <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        @foreach (var combo in Model.Combos)
+                        {
+                            <div class="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col h-full">
+                                <!-- Combo Image -->
+                                <div class="relative aspect-square">
+                                    <a href="@Url.Action("DetailsCombo", new { id = combo.MaCombo })">
+                                        @if (combo.HinhAnh != null && combo.HinhAnh.Length > 0)
+                                        {
+                                            <img src="data:image/png;base64,@Convert.ToBase64String(combo.HinhAnh)" 
+                                                 alt="@combo.TenCombo" 
+                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                        }
+                                        else
+                                        {
+                                            <div class="w-full h-full bg-gray-200 flex items-center justify-center">
+                                                <i data-lucide="utensils" class="h-8 w-8 text-gray-400"></i>
+                                            </div>
+                                        }
+                                    </a>
+                                    
+                                    <!-- Combo badges -->
+                                    <div class="absolute top-2 left-2">
+                                        <span class="bg-purple-500 text-white text-xs px-1.5 py-0.5 rounded-full">Combo</span>
+                                    </div>
+                                    
+                                    <!-- Add to cart button - overlay -->
+                                    <div class="absolute bottom-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100">
+                                        <button onclick="addToCart(@combo.MaCombo, true)" 
+                                                class="bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-colors">
+                                            <i data-lucide="shopping-cart" class="h-4 w-4"></i>
+                                        </button>
+                                        
+                                        <a href="@Url.Action("DetailsCombo", new { id = combo.MaCombo })"
+                                           class="bg-gray-700 text-white p-2 rounded-full hover:bg-gray-800 transition-colors">
+                                            <i data-lucide="info" class="h-4 w-4"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                
+                                <!-- Combo Info -->
+                                <div class="p-3 flex-1 flex flex-col">
+                                    <!-- Title -->
+                                    <h4 class="font-medium text-sm text-gray-800 mb-1 line-clamp-2 leading-tight">
+                                        <a href="@Url.Action("DetailsCombo", new { id = combo.MaCombo })" class="hover:text-red-600 transition-colors">
+                                            @combo.TenCombo
+                                        </a>
+                                    </h4>
+                                    
+                                    <!-- Description -->
+                                    <p class="text-xs text-gray-500 mb-2 line-clamp-2">@combo.MoTa</p>
+                                    
+                                    <!-- Price -->
+                                    <div class="mt-auto">
+                                        <p class="font-bold text-red-600 text-lg">@combo.Gia.ToString("N0")đ</p>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-8">
+                        <i data-lucide="package" class="h-12 w-12 text-gray-400 mx-auto mb-3"></i>
+                        <h3 class="text-lg font-semibold text-gray-700 mb-1">Chưa có combo nào</h3>
+                        <p class="text-gray-500">Chúng tôi sẽ sớm cập nhật thêm các combo hấp dẫn!</p>
+                    </div>
+                }
+            </div>
         </div>
 
-        <!-- Menu Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            <!-- Combos -->
-            @foreach (var item in Model.Combos)
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
             {
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-all duration-300 animate-slide-up">
-                        <div class="relative h-48 overflow-hidden">
-                            <img src="data:image/png;base64,@Convert.ToBase64String(item.HinhAnh ?? new byte[0])" alt="@item.TenCombo" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
-                            <span class="absolute top-3 left-3 bg-yellow-400 text-yellow-900 px-2 py-1 rounded-full text-xs font-bold">COMBO</span>
-                        </div>
-                        <div class="p-6 flex flex-col flex-grow">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors truncate">
-                                <a asp-controller="Product" asp-action="DetailsCombo" asp-route-id="@item.MaCombo">@item.TenCombo</a>
-                            </h3>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">@item.MoTa</p>
-                            <div class="flex items-center justify-between mt-auto">
-                                <span class="text-2xl font-bold text-red-600">@item.Gia.ToString("N0")đ</span>
-                                <form asp-controller="Cart" asp-action="AddComboToCart" method="post">
-                                    <input type="hidden" name="id" value="@item.MaCombo" />
-                                    <button type="submit" class="bg-red-100 text-red-600 p-2 rounded-full hover:bg-red-600 hover:text-white transition-all transform hover:scale-110">
-                                        <i data-lucide="plus" class="h-5 w-5"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-            }
-            <!-- Products -->
-            @foreach (var item in Model.Products)
-            {
-                    <div class="bg-white rounded-2xl shadow-lg overflow-hidden group transform hover:-translate-y-2 transition-all duration-300 animate-slide-up">
-                        <div class="relative h-48 overflow-hidden">
-                            <img src="data:image/png;base64,@Convert.ToBase64String(item.HinhAnh ?? new byte[0])" alt="@item.TenMonAn" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300" />
-                        </div>
-                        <div class="p-6 flex flex-col flex-grow">
-                            <h3 class="text-xl font-bold text-gray-900 mb-2 group-hover:text-red-600 transition-colors truncate">
-                                <a asp-controller="Product" asp-action="Details" asp-route-id="@item.MaMonAn">@item.TenMonAn</a>
-                            </h3>
-                            <p class="text-gray-600 text-sm mb-4 line-clamp-2 flex-grow">@item.MoTa</p>
-                            <div class="flex items-center justify-between mt-auto">
-                                <span class="text-2xl font-bold text-red-600">@item.Gia.ToString("N0")đ</span>
-                                <form asp-controller="Cart" asp-action="AddToCart" method="post">
-                                    <input type="hidden" name="id" value="@item.MaMonAn" />
-                                    <button type="submit" class="bg-red-100 text-red-600 p-2 rounded-full hover:bg-red-600 hover:text-white transition-all transform hover:scale-110">
-                                        <i data-lucide="plus" class="h-5 w-5"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
+                <div class="bg-white rounded-lg shadow-sm mt-6 p-6">
+                    <nav aria-label="Page navigation" class="flex justify-center">
+                        <ul class="inline-flex items-center space-x-1">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li>
+                                    <a href="@Url.Action("Index", new { 
+                                        page = Model.CurrentPage - 1, 
+                                        searchTerm = Model.SearchTerm, 
+                                        categoryIds = string.Join(",", Model.CategoryIds), 
+                                        minPrice = Model.MinPrice, 
+                                        maxPrice = Model.MaxPrice,
+                                        isPopular = Model.IsPopular,
+                                        isNew = Model.IsNew,
+                                        sortBy = Model.SortBy 
+                                    })"
+                                       class="px-3 py-2 text-gray-500 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100 hover:text-gray-700 transition-colors">
+                                        <i data-lucide="chevron-left" class="h-4 w-4"></i>
+                                    </a>
+                                </li>
+                            }
+
+                            @{
+                                var startPage = Math.Max(1, Model.CurrentPage - 2);
+                                var endPage = Math.Min(Model.TotalPages, Model.CurrentPage + 2);
+                            }
+
+                            @for (int i = startPage; i <= endPage; i++)
+                            {
+                                <li>
+                                    <a href="@Url.Action("Index", new { 
+                                        page = i, 
+                                        searchTerm = Model.SearchTerm, 
+                                        categoryIds = string.Join(",", Model.CategoryIds), 
+                                        minPrice = Model.MinPrice, 
+                                        maxPrice = Model.MaxPrice,
+                                        isPopular = Model.IsPopular,
+                                        isNew = Model.IsNew,
+                                        sortBy = Model.SortBy 
+                                    })"
+                                       class="px-3 py-2 text-sm @(i == Model.CurrentPage ? "text-red-600 bg-red-50 border-red-300" : "text-gray-500 bg-white border-gray-300") hover:bg-gray-100 hover:text-gray-700 transition-colors">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li>
+                                    <a href="@Url.Action("Index", new { 
+                                        page = Model.CurrentPage + 1, 
+                                        searchTerm = Model.SearchTerm, 
+                                        categoryIds = string.Join(",", Model.CategoryIds), 
+                                        minPrice = Model.MinPrice, 
+                                        maxPrice = Model.MaxPrice,
+                                        isPopular = Model.IsPopular,
+                                        isNew = Model.IsNew,
+                                        sortBy = Model.SortBy 
+                                    })"
+                                       class="px-3 py-2 text-gray-500 bg-white border border-gray-300 rounded-r-lg hover:bg-gray-100 hover:text-gray-700 transition-colors">
+                                        <i data-lucide="chevron-right" class="h-4 w-4"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                </div>
             }
         </div>
     </div>
 </div>
 
-<!-- Script để kích hoạt icons -->
-<script>
-    lucide.createIcons();
-</script>
+<!-- Product Options Modal -->
+<div id="productOptionsModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-2xl max-w-md w-full mx-4 max-h-[90vh] overflow-auto">
+        <div class="sticky top-0 z-10 bg-white p-4 border-b border-gray-200 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-gray-800" id="modalProductName">Tùy chọn sản phẩm</h3>
+            <button id="closeOptionsModal" class="text-gray-500 hover:text-gray-700">
+                <i data-lucide="x" class="h-5 w-5"></i>
+            </button>
+        </div>
+        
+        <div class="p-6">
+            <!-- Product Info -->
+            <div class="flex items-center space-x-4 mb-6">
+                <div class="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden">
+                    <img id="modalProductImage" src="" alt="" class="w-full h-full object-cover" />
+                </div>
+                <div>
+                    <h4 id="modalProductTitle" class="font-medium text-gray-900"></h4>
+                    <div class="flex items-center space-x-2 mt-1">
+                        <p id="modalProductPrice" class="text-red-600 font-bold"></p>
+                        <p id="modalTotalPrice" class="text-green-600 font-bold hidden"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quantity Selection -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Số lượng:</label>
+                <div class="flex items-center">
+                    <button id="decreaseQuantity" class="w-8 h-8 bg-gray-200 rounded-l flex items-center justify-center hover:bg-gray-300 transition-colors">
+                        <i data-lucide="minus" class="h-4 w-4"></i>
+                    </button>
+                    <input type="number" id="modalQuantity" value="1" min="1" max="10" 
+                           class="w-12 text-center border-y border-gray-300 h-8 focus:outline-none">
+                    <button id="increaseQuantity" class="w-8 h-8 bg-gray-200 rounded-r flex items-center justify-center hover:bg-gray-300 transition-colors">
+                        <i data-lucide="plus" class="h-4 w-4"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Dynamic Option Groups will be inserted here -->
+            <div id="productOptionGroups" class="space-y-6">
+                <!-- Options will be dynamically loaded here -->
+                <div class="animate-pulse">
+                    <div class="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                    <div class="h-10 bg-gray-100 rounded mb-2"></div>
+                    <div class="h-10 bg-gray-100 rounded mb-2"></div>
+                </div>
+            </div>
+            
+            <!-- Notes -->
+            <div class="mb-6">
+                <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Ghi chú:</label>
+                <textarea id="notes" rows="2" placeholder="Yêu cầu đặc biệt..."
+                          class="w-full border border-gray-300 rounded-lg p-2 text-sm focus:outline-none focus:ring-1 focus:ring-red-500"></textarea>
+            </div>
+            
+            <input type="hidden" id="modalProductId" value="">
+            <input type="hidden" id="modalBasePrice" value="0">
+            
+            <!-- Action Buttons -->
+            <div class="flex justify-between mt-6">
+                <button id="closeModalButton" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    Hủy
+                </button>
+                <button id="addToCartWithOptions" class="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center">
+                    <i data-lucide="shopping-cart" class="h-4 w-4 mr-2"></i>
+                    Thêm vào giỏ hàng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sidebar controls
+            const sidebar = document.getElementById('filterSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            const openButton = document.getElementById('openSidebar');
+            const closeButton = document.getElementById('closeSidebar');
+
+            // Open sidebar (mobile)
+            openButton.addEventListener('click', function() {
+                sidebar.classList.remove('translate-x-full');
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+
+            // Close sidebar
+            function closeSidebar() {
+                sidebar.classList.add('translate-x-full');
+                overlay.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+
+            closeButton.addEventListener('click', closeSidebar);
+            overlay.addEventListener('click', closeSidebar);
+
+            // Close on escape key
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeSidebar();
+                }
+            });
+
+            // Advanced filters toggle
+            const toggleAdvanced = document.getElementById('toggleAdvanced');
+            const advancedFilters = document.getElementById('advancedFilters');
+            const chevronIcon = document.getElementById('chevronIcon');
+            
+            // Remove the advanced filter toggle logic since it's no longer needed
+
+            // Auto-submit main search form when sort changes
+            const sortSelect = document.querySelector('select[name="sortBy"]');
+            if (sortSelect) {
+                sortSelect.addEventListener('change', function() {
+                    this.closest('form').submit();
+                });
+            }
+
+            // Price range slider in sidebar
+            const priceRange = document.getElementById('priceRange');
+            const minPriceInput = document.getElementById('minPrice');
+            const maxPriceInput = document.getElementById('maxPrice');
+            
+            if (priceRange && maxPriceInput) {
+                priceRange.addEventListener('input', function() {
+                    maxPriceInput.value = this.value;
+                    updateSliderBackground();
+                });
+                
+                maxPriceInput.addEventListener('input', function() {
+                    priceRange.value = this.value;
+                    updateSliderBackground();
+                });
+
+                minPriceInput.addEventListener('input', function() {
+                    updateSliderBackground();
+                });
+
+                function updateSliderBackground() {
+                    const min = parseInt(priceRange.min);
+                    const max = parseInt(priceRange.max);
+                    const value = parseInt(priceRange.value);
+                    const percent = ((value - min) / (max - min)) * 100;
+                    priceRange.style.background = `linear-gradient(to right, #ef4444 0%, #ef4444 ${percent}%, #d1d5db ${percent}%, #d1d5db 100%)`;
+                }
+
+                updateSliderBackground();
+            }
+
+            // Live search (debounced) for main search bar
+            const searchInput = document.querySelector('input[name="searchTerm"]');
+            let searchTimeout;
+            
+            if (searchInput) {
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        // Auto-submit after 1 second of no typing
+                        // this.closest('form').submit();
+                    }, 1000);
+                });
+            }
+
+            // Checkbox handling for categoryIds in sidebar
+            const categoryCheckboxes = document.querySelectorAll('#advancedSearchForm input[name="categoryIds"]');
+            categoryCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    // Optional: Auto-submit when category changes
+                    // this.closest('form').submit();
+                });
+            });
+
+            // Feature checkboxes in sidebar
+            const featureCheckboxes = document.querySelectorAll('#advancedSearchForm input[name="isPopular"], #advancedSearchForm input[name="isNew"]');
+            featureCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    // Optional: Auto-submit when feature changes
+                    // this.closest('form').submit();
+                });
+            });
+        });
+
+
+        // Add to cart function (quick add)
+        function addToCart(id, isCombo = false) {
+            fetch(`/Cart/QuickAdd?id=${id}&quantity=1&isCombo=${isCombo}&redirectToCart=false`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Cập nhật số lượng giỏ hàng
+                        updateCartCount(data.cartCount);
+                        // Hiển thị thông báo thành công
+                        const productType = isCombo ? "combo" : "sản phẩm";
+                        showNotification(`Đã thêm ${productType} vào giỏ hàng!`, 'success');
+                    } else {
+                        showNotification('Không thể thêm vào giỏ hàng', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Có lỗi xảy ra', 'error');
+                });
+        }
+        
+        // Modal handling
+        const productOptionsModal = document.getElementById('productOptionsModal');
+        const closeOptionsModal = document.getElementById('closeOptionsModal');
+        const closeModalButton = document.getElementById('closeModalButton');
+        const modalProductId = document.getElementById('modalProductId');
+        const modalProductTitle = document.getElementById('modalProductTitle');
+        const modalProductImage = document.getElementById('modalProductImage');
+        const modalProductPrice = document.getElementById('modalProductPrice');
+        const modalQuantity = document.getElementById('modalQuantity');
+        const decreaseQuantity = document.getElementById('decreaseQuantity');
+        const increaseQuantity = document.getElementById('increaseQuantity');
+        const addToCartWithOptions = document.getElementById('addToCartWithOptions');
+        
+        // Format price
+        function formatPrice(price) {
+            return new Intl.NumberFormat('vi-VN').format(price) + 'đ';
+        }
+        
+        // Calculate total price based on selected options
+        function calculateTotalPrice() {
+            const basePrice = parseFloat(document.getElementById('modalBasePrice').value) || 0;
+            const quantity = parseInt(modalQuantity.value) || 1;
+            let totalPriceAdjustment = 0;
+            
+            // Calculate price adjustments from radio buttons
+            document.querySelectorAll('.option-radio:checked').forEach(radio => {
+                totalPriceAdjustment += parseFloat(radio.dataset.priceAdjustment || 0);
+            });
+            
+            // Calculate price adjustments from checkboxes
+            document.querySelectorAll('.option-checkbox:checked').forEach(checkbox => {
+                totalPriceAdjustment += parseFloat(checkbox.dataset.priceAdjustment || 0);
+            });
+            
+            const totalItemPrice = basePrice + totalPriceAdjustment;
+            const totalPrice = totalItemPrice * quantity;
+            
+            // Update UI
+            const modalTotalPrice = document.getElementById('modalTotalPrice');
+            modalTotalPrice.textContent = formatPrice(totalPrice);
+            modalTotalPrice.classList.remove('hidden');
+            
+            if (totalPriceAdjustment > 0) {
+                modalProductPrice.classList.add('line-through', 'text-gray-500', 'text-sm');
+            } else {
+                modalProductPrice.classList.remove('line-through', 'text-gray-500', 'text-sm');
+                modalTotalPrice.classList.add('hidden');
+            }
+            
+            return {
+                basePrice,
+                totalPriceAdjustment,
+                totalItemPrice,
+                totalPrice,
+                quantity
+            };
+        }
+        
+        // Fetch product options from API
+        async function fetchProductOptions(productId) {
+            try {
+                const response = await fetch(`/Product/GetProductOptions?id=${productId}`);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Error fetching product options:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // Render option groups
+        function renderOptionGroups(optionGroups) {
+            const container = document.getElementById('productOptionGroups');
+            container.innerHTML = ''; // Clear loading placeholder
+            
+            if (!optionGroups || optionGroups.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 italic">Không có tùy chọn cho sản phẩm này</p>';
+                return;
+            }
+            
+            optionGroups.forEach(group => {
+                const groupElement = document.createElement('div');
+                groupElement.className = 'mb-6';
+                
+                // Option Group Title
+                const labelElement = document.createElement('label');
+                labelElement.className = 'block text-sm font-medium text-gray-700 mb-2';
+                labelElement.textContent = group.name;
+                groupElement.appendChild(labelElement);
+                
+                // Options Container
+                const optionsContainer = document.createElement('div');
+                
+                // Render options based on selection type
+                if (group.selectionType === 1) { // Radio buttons (single choice)
+                    optionsContainer.className = 'flex flex-wrap gap-2';
+                    
+                    group.options.forEach((option, index) => {
+                        const label = document.createElement('label');
+                        label.className = 'flex-1 min-w-[80px]';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'radio';
+                        input.name = `option_group_${group.optionGroupID}`;
+                        input.value = option.optionID;
+                        input.className = 'hidden peer option-radio';
+                        input.dataset.priceAdjustment = option.priceAdjustment;
+                        input.dataset.optionName = option.name;
+                        if (index === 0) input.checked = true;
+                        
+                        // When option selected, recalculate price
+                        input.addEventListener('change', calculateTotalPrice);
+                        
+                        const optionDiv = document.createElement('div');
+                        optionDiv.className = 'border border-gray-300 rounded-lg py-2 text-center text-sm peer-checked:border-red-500 peer-checked:bg-red-50 peer-checked:text-red-600 cursor-pointer transition-all hover:bg-gray-50';
+                        
+                        optionDiv.innerHTML = option.name;
+                        if (option.priceAdjustment > 0) {
+                            optionDiv.innerHTML += `<span class="text-xs text-gray-500 block">(+${option.priceFormatted})</span>`;
+                        }
+                        
+                        label.appendChild(input);
+                        label.appendChild(optionDiv);
+                        optionsContainer.appendChild(label);
+                    });
+                } else { // Checkboxes (multi-choice)
+                    optionsContainer.className = 'space-y-2';
+                    
+                    group.options.forEach(option => {
+                        const label = document.createElement('label');
+                        label.className = 'flex items-center space-x-2 p-2 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer transition-all';
+                        
+                        const input = document.createElement('input');
+                        input.type = 'checkbox';
+                        input.className = 'h-4 w-4 text-red-500 focus:ring-red-400 option-checkbox';
+                        input.dataset.priceAdjustment = option.priceAdjustment;
+                        input.dataset.optionName = option.name;
+                        input.dataset.optionId = option.optionID;
+                        
+                        // When option selected, recalculate price
+                        input.addEventListener('change', calculateTotalPrice);
+                        
+                        const span = document.createElement('span');
+                        span.className = 'text-sm';
+                        span.textContent = option.name;
+                        
+                        if (option.priceAdjustment > 0) {
+                            const priceSpan = document.createElement('span');
+                            priceSpan.className = 'text-xs text-gray-500 ml-1';
+                            priceSpan.textContent = `(+${option.priceFormatted})`;
+                            span.appendChild(priceSpan);
+                        }
+                        
+                        label.appendChild(input);
+                        label.appendChild(span);
+                        optionsContainer.appendChild(label);
+                    });
+                }
+                
+                groupElement.appendChild(optionsContainer);
+                container.appendChild(groupElement);
+            });
+            
+            // Calculate initial total
+            calculateTotalPrice();
+        }
+        
+        // Open the modal with product details
+        async function openOptionsModal(productId, productName, productImage, productPrice) {
+            modalProductId.value = productId;
+            modalProductTitle.textContent = productName;
+            modalProductPrice.textContent = formatPrice(productPrice);
+            document.getElementById('modalBasePrice').value = productPrice;
+            
+            if (productImage) {
+                modalProductImage.src = `data:image/png;base64,${productImage}`;
+            } else {
+                modalProductImage.src = '';
+                modalProductImage.alt = 'No image';
+            }
+            
+            // Reset quantity
+            modalQuantity.value = 1;
+            
+            // Clear notes
+            document.getElementById('notes').value = '';
+            
+            // Show loading state
+            document.getElementById('productOptionGroups').innerHTML = `
+                <div class="animate-pulse">
+                    <div class="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+                    <div class="h-10 bg-gray-100 rounded mb-2"></div>
+                    <div class="h-10 bg-gray-100 rounded mb-2"></div>
+                </div>
+            `;
+            
+            // Show the modal
+            productOptionsModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            
+            // Fetch product options
+            const optionsData = await fetchProductOptions(productId);
+            if (optionsData.success) {
+                renderOptionGroups(optionsData.optionGroups);
+            } else {
+                document.getElementById('productOptionGroups').innerHTML = 
+                    '';
+            }
+        }
+        
+        // Close the modal
+        function closeModal() {
+            productOptionsModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+        
+        // Quantity controls
+        decreaseQuantity.addEventListener('click', function() {
+            let currentQty = parseInt(modalQuantity.value);
+            if (currentQty > 1) {
+                modalQuantity.value = currentQty - 1;
+            }
+        });
+        
+        increaseQuantity.addEventListener('click', function() {
+            let currentQty = parseInt(modalQuantity.value);
+            if (currentQty < 10) {
+                modalQuantity.value = currentQty + 1;
+            }
+        });
+        
+        // Modal close buttons
+        closeOptionsModal.addEventListener('click', closeModal);
+        closeModalButton.addEventListener('click', closeModal);
+        
+        // Quantity change events
+        modalQuantity.addEventListener('change', function() {
+            // Ensure valid quantity
+            let qty = parseInt(this.value);
+            if (isNaN(qty) || qty < 1) qty = 1;
+            if (qty > 10) qty = 10;
+            this.value = qty;
+            
+            calculateTotalPrice();
+        });
+        
+        // Handle add to cart with options
+        addToCartWithOptions.addEventListener('click', function() {
+            const productId = modalProductId.value;
+            const quantity = modalQuantity.value;
+            
+            // Get all selected options
+            const selectedOptions = [];
+            
+            // Radio button options (single choices)
+            document.querySelectorAll('.option-radio:checked').forEach(radio => {
+                selectedOptions.push({
+                    optionId: parseInt(radio.value),
+                    optionName: radio.dataset.optionName,
+                    priceAdjustment: parseFloat(radio.dataset.priceAdjustment || 0)
+                });
+            });
+            
+            // Checkbox options (multiple choices)
+            document.querySelectorAll('.option-checkbox:checked').forEach(checkbox => {
+                selectedOptions.push({
+                    optionId: parseInt(checkbox.dataset.optionId),
+                    optionName: checkbox.dataset.optionName,
+                    priceAdjustment: parseFloat(checkbox.dataset.priceAdjustment || 0)
+                });
+            });
+            
+            // Get price calculation
+            const priceInfo = calculateTotalPrice();
+            
+            // Get notes
+            const notes = document.getElementById('notes').value;
+            
+            // Format selected options for display
+            let optionsText = '';
+            if (selectedOptions.length > 0) {
+                optionsText = selectedOptions.map(opt => opt.optionName).join(', ');
+            }
+            
+            // Add to cart with options
+            addToCartWithProductOptions(productId, quantity, {
+                optionsText: optionsText,
+                selectedOptions: selectedOptions,
+                notes: notes,
+                extraCost: priceInfo.totalPriceAdjustment
+            });
+        });
+        
+        // Add to cart with options
+        function addToCartWithProductOptions(productId, quantity, options) {
+            // Format the display text for options
+            let displayOptions = options.optionsText;
+            
+            // Add notes if provided
+            if (options.notes) {
+                displayOptions += displayOptions ? `, Ghi chú: ${options.notes}` : `Ghi chú: ${options.notes}`;
+            }
+            
+            // If there are no options but there are notes, just show notes
+            const optionsToSend = displayOptions || "Không có tùy chọn";
+            
+            // Add to cart using AJAX
+            fetch(`/Cart/QuickAdd?id=${productId}&quantity=${quantity}&isCombo=false&redirectToCart=false&options=${encodeURIComponent(optionsToSend)}&extraCost=${options.extraCost}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateCartCount(data.cartCount);
+                        showNotification('Đã thêm vào giỏ hàng với tùy chọn!', 'success');
+                        closeModal();
+                    } else {
+                        showNotification('Không thể thêm vào giỏ hàng', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('Có lỗi xảy ra', 'error');
+                });
+        }
+
+        // Filter management functions
+        function removeFilter(filterType, value) {
+            const url = new URL(window.location);
+            const params = new URLSearchParams(url.search);
+            
+            if (filterType === 'categoryIds') {
+                // Remove specific category
+                const categories = params.getAll('categoryIds');
+                const filtered = categories.filter(id => id !== value);
+                params.delete('categoryIds');
+                filtered.forEach(id => params.append('categoryIds', id));
+            }
+            
+            url.search = params.toString();
+            window.location.href = url.toString();
+        }
+
+        function removePriceFilter() {
+            const url = new URL(window.location);
+            const params = new URLSearchParams(url.search);
+            params.delete('minPrice');
+            params.delete('maxPrice');
+            url.search = params.toString();
+            window.location.href = url.toString();
+        }
+
+        function clearAllFilters() {
+            const url = new URL(window.location);
+            const params = new URLSearchParams();
+            
+            // Keep only search term and sort
+            if (url.searchParams.get('searchTerm')) {
+                params.set('searchTerm', url.searchParams.get('searchTerm'));
+            }
+            if (url.searchParams.get('sortBy')) {
+                params.set('sortBy', url.searchParams.get('sortBy'));
+            }
+            
+            url.search = params.toString();
+            window.location.href = url.toString();
+        }
+
+        // Toggle filter sidebar
+        document.getElementById('toggleFilter')?.addEventListener('click', function() {
+            const sidebar = document.getElementById('filterSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('translate-x-full');
+            overlay.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        // Simple notification function
+        function showNotification(message, type) {
+            // Create a simple toast notification
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 z-50 px-6 py-3 rounded-lg text-white shadow-lg transform transition-transform duration-300 ${type === 'success' ? 'bg-green-500' : 'bg-red-500'}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // Animate in
+            setTimeout(() => {
+                toast.style.transform = 'translateX(0)';
+            }, 100);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                toast.style.transform = 'translateX(100%)';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+        // Function to update cart count
+        function updateCartCount(count) {
+            const cartCountElement = document.getElementById('cart-count');
+            if (!cartCountElement) return;
+            
+            if (count !== undefined) {
+                // Nếu count được truyền vào, sử dụng nó
+                cartCountElement.textContent = count;
+                cartCountElement.classList.remove('hidden');
+            } else {
+                // Nếu không, gọi API để lấy số lượng hiện tại
+                fetch('@Url.Action("GetCartCount", "Cart")')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.count > 0) {
+                            cartCountElement.textContent = data.count;
+                            cartCountElement.classList.remove('hidden');
+                        } else {
+                            cartCountElement.classList.add('hidden');
+                        }
+                    })
+                    .catch(err => console.error('Error fetching cart count:', err));
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom styling for sidebar and components */
+        
+        /* Price range slider */
+        .range-slider {
+            -webkit-appearance: none;
+            background: linear-gradient(to right, #ef4444 0%, #ef4444 50%, #d1d5db 50%, #d1d5db 100%);
+            outline: none;
+        }
+        
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
+        .range-slider::-moz-range-thumb {
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #ef4444;
+            border: 2px solid #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            cursor: pointer;
+            border: none;
+        }
+
+        /* Line clamp utility */
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Sidebar scroll styling */
+        .overflow-y-auto::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+        
+        .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+        }
+
+        /* Responsive adjustments */
+        @@media (max-width: 1024px) {
+            #filterSidebar {
+                z-index: 60;
+                right: 0;
+                left: auto;
+                width: 320px;
+            }
+        }
+        
+        @@media (min-width: 1025px) {
+            #filterSidebar {
+                width: 400px;
+            }
+        }
+
+        /* Animation for filter buttons */
+        .transition-colors {
+            transition-property: color, background-color, border-color;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms;
+        }
+    </style>
+}

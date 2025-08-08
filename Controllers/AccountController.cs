@@ -76,7 +76,6 @@ namespace FastFoodApp.Controllers
         {
             return View();
         }
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
@@ -84,12 +83,20 @@ namespace FastFoodApp.Controllers
             if (ModelState.IsValid)
             {
                 var user = await _context.NguoiDungs
-                                         .Include(u => u.VaiTro)
+                                         .Include(u => u.VaiTro) 
                                          .FirstOrDefaultAsync(u => u.Email == model.Email);
 
                 if (user != null && !string.IsNullOrEmpty(user.MatKhau) && BCrypt.Net.BCrypt.Verify(model.MatKhau, user.MatKhau))
                 {
                     await SignInUser(user);
+
+                    if (user.VaiTro?.TenVaiTro == "Admin")
+                    {
+                        TempData["ToastSuccess"] = $"Chào mừng quản trị viên {user.HoTen}!";
+                        return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+                    }
+
+                    TempData["ToastSuccess"] = $"Chào mừng {user.HoTen}!";
                     return RedirectToAction("Index", "Home");
                 }
                 ModelState.AddModelError(string.Empty, "Email hoặc mật khẩu không chính xác.");
@@ -144,10 +151,17 @@ namespace FastFoodApp.Controllers
             if (!ModelState.IsValid)
             {
                 var fullViewModel = await BuildProfileViewModel(userId);
-                fullViewModel.HoTen = model.HoTen;
-                fullViewModel.SoDienThoai = model.SoDienThoai;
-                fullViewModel.NgaySinh = model.NgaySinh;
-                return View(fullViewModel);
+                
+                if (fullViewModel != null)
+                {
+                    fullViewModel.HoTen = model.HoTen;
+                    fullViewModel.SoDienThoai = model.SoDienThoai;
+                    fullViewModel.NgaySinh = model.NgaySinh;
+                    return View(fullViewModel);
+                }
+                
+                // If there's an issue with building the full view model, fallback to returning the original model
+                return View(model);
             }
 
             var user = await _context.NguoiDungs.FindAsync(userId);
@@ -169,7 +183,15 @@ namespace FastFoodApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddAddress([Bind(Prefix = "NewAddress")] DiaChiNguoiDung newAddress)
         {
-            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ToastError"] = "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.";
+                return RedirectToAction("Login");
+            }
+
+            var userId = int.Parse(userIdString);
             newAddress.MaNguoiDung = userId;
 
             ModelState.Clear();
@@ -200,7 +222,15 @@ namespace FastFoodApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAddress(int id)
         {
-            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ToastError"] = "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.";
+                return RedirectToAction("Login");
+            }
+
+            var userId = int.Parse(userIdString);
             var address = await _context.DiaChiNguoiDungs.FirstOrDefaultAsync(a => a.MaDiaChi == id && a.MaNguoiDung == userId);
 
             if (address != null)
@@ -223,7 +253,15 @@ namespace FastFoodApp.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SetDefaultAddress(int id)
         {
-            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ToastError"] = "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.";
+                return RedirectToAction("Login");
+            }
+
+            var userId = int.Parse(userIdString);
             var userAddresses = await _context.DiaChiNguoiDungs
                                               .Where(a => a.MaNguoiDung == userId)
                                               .ToListAsync();
@@ -244,7 +282,7 @@ namespace FastFoodApp.Controllers
         }
 
         [AllowAnonymous]
-        public IActionResult ExternalLogin(string provider, string returnUrl = null)
+        public IActionResult ExternalLogin(string provider, string? returnUrl = null)
         {
             var redirectUrl = Url.Action(nameof(ExternalLoginCallback), "Account", new { returnUrl });
             var properties = new AuthenticationProperties { RedirectUri = redirectUrl };
@@ -252,7 +290,7 @@ namespace FastFoodApp.Controllers
         }
 
         [AllowAnonymous]
-        public async Task<IActionResult> ExternalLoginCallback(string returnUrl = null, string remoteError = null)
+        public async Task<IActionResult> ExternalLoginCallback(string? returnUrl = null, string? remoteError = null)
         {
             if (remoteError != null)
             {
@@ -267,7 +305,7 @@ namespace FastFoodApp.Controllers
             }
 
             var email = info.Principal.FindFirstValue(ClaimTypes.Email);
-            var name = info.Principal.FindFirstValue(ClaimTypes.Name);
+            var name = info.Principal.FindFirstValue(ClaimTypes.Name) ?? "Người dùng Google";
 
             if (email == null)
             {
@@ -320,7 +358,63 @@ namespace FastFoodApp.Controllers
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(claimsIdentity), authProperties);
         }
 
-        private async Task<ProfileViewModel> BuildProfileViewModel(int userId)
+        [Authorize]
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            return View();
+        }
+
+        [Authorize]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString))
+            {
+                await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+                TempData["ToastError"] = "Phiên đăng nhập không hợp lệ, vui lòng đăng nhập lại.";
+                return RedirectToAction("Login");
+            }
+
+            var userId = int.Parse(userIdString);
+            var user = await _context.NguoiDungs.FindAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+
+            // Check if the user account was created with external login (Google)
+            if (string.IsNullOrEmpty(user.MatKhau))
+            {
+                ModelState.AddModelError(string.Empty, "Tài khoản của bạn được tạo bằng đăng nhập Google và không có mật khẩu để thay đổi.");
+                return View(model);
+            }
+
+            // Verify current password
+            if (!BCrypt.Net.BCrypt.Verify(model.MatKhauHienTai, user.MatKhau))
+            {
+                ModelState.AddModelError("MatKhauHienTai", "Mật khẩu hiện tại không chính xác.");
+                return View(model);
+            }
+
+            // Update password
+            user.MatKhau = BCrypt.Net.BCrypt.HashPassword(model.MatKhauMoi);
+            _context.Update(user);
+            await _context.SaveChangesAsync();
+
+            TempData["ToastSuccess"] = "Mật khẩu đã được thay đổi thành công!";
+            return RedirectToAction(nameof(Profile));
+        }
+
+        private async Task<ProfileViewModel?> BuildProfileViewModel(int userId)
         {
             var user = await _context.NguoiDungs
                                      .Include(u => u.CapThanhVien)
@@ -335,7 +429,7 @@ namespace FastFoodApp.Controllers
             var totalSpent = await _context.HoaDons.Where(h => h.MaNguoiDung == userId && h.TrangThai == "Đã giao").SumAsync(h => (decimal?)h.TongTien) ?? 0;
             var allMemberships = await _context.CapThanhViens.OrderBy(c => c.NguongDiem).ToListAsync();
 
-            CapThanhVien nextMembership = null;
+            CapThanhVien? nextMembership = null;
             double progress = 0;
 
             if (user.CapThanhVien != null)
@@ -352,7 +446,7 @@ namespace FastFoodApp.Controllers
             return new ProfileViewModel
             {
                 MaNguoiDung = user.MaNguoiDung,
-                Email = user.Email,
+                Email = user.Email ?? string.Empty,
                 HoTen = user.HoTen,
                 SoDienThoai = user.SoDienThoai,
                 NgaySinh = user.NgaySinh,
@@ -371,6 +465,6 @@ namespace FastFoodApp.Controllers
 
     public class AddressPayload
     {
-        public string Address { get; set; }
+        public string Address { get; set; } = string.Empty;
     }
 }

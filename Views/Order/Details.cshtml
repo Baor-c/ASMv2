@@ -9,16 +9,32 @@
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
-        <div class="flex items-center mb-8 animate-fade-in">
-            <a asp-action="Index" asp-controller="Order" class="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
-                <i data-lucide="arrow-left" class="h-6 w-6 text-gray-600"></i>
-            </a>
-            <div>
-                <h1 class="text-2xl font-bold text-gray-900">
-                    Theo dõi đơn hàng #@Model.MaHoaDon
-                </h1>
-                <p class="text-gray-600 text-sm">Đặt lúc: @Model.NgayDat.ToString("g")</p>
+        <div class="flex items-center justify-between mb-8 animate-fade-in">
+            <div class="flex items-center">
+                <a asp-action="Index" asp-controller="Order" class="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                    <i data-lucide="arrow-left" class="h-6 w-6 text-gray-600"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        Theo dõi đơn hàng #@Model.MaHoaDon
+                    </h1>
+                    <p class="text-gray-600 text-sm">Đặt lúc: @Model.NgayDat.ToString("g")</p>
+                </div>
             </div>
+            
+            @{
+                var currentStep = Model.TrackingSteps.FirstOrDefault(s => s.IsCurrent);
+                var canCancel = currentStep != null && (currentStep.Status == "Chờ xử lý" || currentStep.Status == "Đang chuẩn bị");
+            }
+            
+            @if (canCancel)
+            {
+                <button type="button" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2" 
+                        onclick="openCancelModal()">
+                    <i data-lucide="x-circle" class="h-5 w-5"></i>
+                    <span>Hủy đơn</span>
+                </button>
+            }
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -128,7 +144,48 @@
     </div>
 </div>
 
-<!-- Script để kích hoạt icons -->
+<!-- Cancellation Modal -->
+<div id="cancelOrderModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 items-center justify-center hidden">
+    <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 md:mx-auto">
+        <div class="text-center mb-6">
+            <div class="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4">
+                <i data-lucide="alert-triangle" class="h-8 w-8 text-red-600"></i>
+            </div>
+            <h3 class="text-xl font-bold text-gray-900">Xác nhận hủy đơn hàng</h3>
+            <p class="text-gray-600 mt-2">
+                Bạn có chắc chắn muốn hủy đơn hàng #@Model.MaHoaDon không?<br>
+                Hành động này không thể hoàn tác.
+            </p>
+        </div>
+        
+        <div class="flex space-x-4">
+            <button type="button" class="flex-1 py-2 px-4 bg-gray-200 hover:bg-gray-300 rounded-lg font-medium text-gray-800 transition-colors"
+                    onclick="closeCancelModal()">
+                Đóng
+            </button>
+            <form asp-action="Cancel" asp-route-id="@Model.MaHoaDon" method="post" class="flex-1">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="w-full py-2 px-4 bg-red-500 hover:bg-red-600 rounded-lg font-medium text-white transition-colors">
+                    Xác nhận hủy
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Script để kích hoạt icons và modal -->
 <script>
     lucide.createIcons();
+    
+    function openCancelModal() {
+        document.getElementById('cancelOrderModal').classList.remove('hidden');
+        document.getElementById('cancelOrderModal').classList.add('flex');
+        document.body.classList.add('overflow-hidden');
+    }
+    
+    function closeCancelModal() {
+        document.getElementById('cancelOrderModal').classList.add('hidden');
+        document.getElementById('cancelOrderModal').classList.remove('flex');
+        document.body.classList.remove('overflow-hidden');
+    }
 </script>

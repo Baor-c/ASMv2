@@ -1,0 +1,78 @@
+﻿@model ASM1.Models.HoaDon
+@{
+    ViewData["Title"] = "Chi tiết Đơn hàng #" + Model.MaHoaDon;
+    string FormatPrice(decimal price) => price.ToString("N0") + "đ";
+}
+
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center mb-6">
+        <a asp-action="Index" class="mr-4 p-2 rounded-full hover:bg-gray-200 transition-colors">
+            <i data-lucide="arrow-left" class="h-5 w-5 text-gray-600"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Đơn hàng #@Model.MaHoaDon</h1>
+            <p class="text-gray-600 text-sm">Đặt lúc: @Model.NgayDat.ToString("g")</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <!-- Left Column: Order Info -->
+        <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm">
+            <h3 class="text-lg font-semibold mb-4 border-b pb-3">Chi tiết Đơn hàng</h3>
+            <div class="space-y-4">
+                @foreach (var item in Model.ChiTietHoaDons)
+                {
+                    var tenSanPham = item.MonAn?.TenMonAn ?? item.Combo?.TenCombo ?? "Sản phẩm không xác định";
+                    var hinhAnh = item.MonAn?.HinhAnh ?? item.Combo?.HinhAnh;
+
+                        <div class="flex items-center space-x-4">
+                        @if (hinhAnh != null && hinhAnh.Length > 0)
+                        {
+                                    <img src="data:image/png;base64,@Convert.ToBase64String(hinhAnh)" alt="@tenSanPham" class="w-16 h-16 rounded-lg object-cover" />
+                        }
+                            <div class="flex-1">
+                                <p class="font-medium">@tenSanPham</p>
+                                <p class="text-sm text-gray-600">Số lượng: @item.SoLuong</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="font-semibold">@FormatPrice(item.DonGia * item.SoLuong)</p>
+                                <p class="text-sm text-gray-500">(@FormatPrice(item.DonGia) mỗi sản phẩm)</p>
+                            </div>
+                        </div>
+                }
+            </div>
+            <div class="border-t mt-6 pt-4 text-right">
+                <p class="text-lg font-bold">Tổng cộng: <span class="text-red-600">@FormatPrice(Model.TongTien)</span></p>
+            </div>
+        </div>
+
+        <!-- Right Column: Customer & Status -->
+        <div class="space-y-6">
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Thông tin Khách hàng</h3>
+                <div class="space-y-2 text-sm">
+                    <p><strong>Tên:</strong> @Model.NguoiDung.HoTen</p>
+                    <p><strong>Email:</strong> @Model.NguoiDung.Email</p>
+                    <p><strong>Địa chỉ giao:</strong> @Model.DiaChiGiaoHang</p>
+                </div>
+            </div>
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Cập nhật Trạng thái</h3>
+                <form asp-action="UpdateStatus" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="orderId" value="@Model.MaHoaDon" />
+                    <select name="newStatus" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500">
+                        <option value="Chờ xử lý" selected="@(Model.TrangThai == "Chờ xử lý")">Chờ xử lý</option>
+                        <option value="Đang chuẩn bị" selected="@(Model.TrangThai == "Đang chuẩn bị")">Đang chuẩn bị</option>
+                        <option value="Sẵn sàng" selected="@(Model.TrangThai == "Sẵn sàng")">Sẵn sàng</option>
+                        <option value="Đang giao" selected="@(Model.TrangThai == "Đang giao")">Đang giao</option>
+                        <option value="Đã giao" selected="@(Model.TrangThai == "Đã giao")">Đã giao</option>
+                        <option value="Đã hủy" selected="@(Model.TrangThai == "Đã hủy")">Đã hủy</option>
+                    </select>
+                    <button type="submit" class="mt-4 w-full bg-red-600 text-white py-2 rounded-lg font-semibold hover:bg-red-700">Lưu thay đổi</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,135 @@
+﻿@using FastFoodApp.Areas.Admin.Models
+@model PaginatedList<ASM1.Models.HoaDon>
+@{
+    ViewData["Title"] = "Quản lý Đơn hàng";
+
+    Func<string, (string text, string color)> GetStatusDetails = (status) => status switch
+    {
+        "Chờ xử lý" => ("Chờ xử lý", "bg-yellow-100 text-yellow-800"),
+        "Đang chuẩn bị" => ("Đang chuẩn bị", "bg-blue-100 text-blue-800"),
+        "Sẵn sàng" => ("Sẵn sàng", "bg-indigo-100 text-indigo-800"),
+        "Đang giao" => ("Đang giao", "bg-purple-100 text-purple-800"),
+        "Đã giao" => ("Đã giao", "bg-green-100 text-green-800"),
+        "Đã hủy" => ("Đã hủy", "bg-red-100 text-red-800"),
+        _ => (status, "bg-gray-100 text-gray-800"),
+    };
+
+    var statusOptions = new List<string> { "Chờ xử lý", "Đang chuẩn bị", "Sẵn sàng", "Đang giao", "Đã giao", "Đã hủy" };
+}
+
+<div class="space-y-6">
+    <!-- Filter Section -->
+    <div class="bg-white p-6 rounded-lg shadow-sm">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">Bộ lọc & Tìm kiếm</h2>
+        <form asp-action="Index" method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+            <div>
+                <label class="text-sm font-medium text-gray-700">Tìm kiếm</label>
+                <input type="text" name="searchTerm" value="@ViewData["CurrentSearchTerm"]" placeholder="Mã ĐH, tên khách..." class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500" />
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700">Trạng thái</label>
+                <select name="statusFilter" class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500">
+                    <option value="">Tất cả trạng thái</option>
+                    @foreach (var status in statusOptions)
+                    {
+                            <option value="@status" selected="@(ViewData["CurrentStatusFilter"]?.ToString() == status)">@status</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700">Từ ngày</label>
+                <input type="date" name="startDate" value="@ViewData["CurrentStartDate"]" class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500" />
+            </div>
+            <div>
+                <label class="text-sm font-medium text-gray-700">Đến ngày</label>
+                <input type="date" name="endDate" value="@ViewData["CurrentEndDate"]" class="mt-1 w-full border-gray-300 rounded-lg shadow-sm focus:border-red-500 focus:ring-red-500" />
+            </div>
+            <div class="lg:col-span-4 flex justify-end space-x-2">
+                <a asp-action="Index" class="border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50 text-sm font-medium">Reset</a>
+                <button type="submit" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 text-sm font-medium flex items-center space-x-2">
+                    <i data-lucide="filter" class="h-4 w-4"></i>
+                    <span>Áp dụng</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table Section -->
+    <div class="bg-white rounded-lg shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mã ĐH</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Khách hàng</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            <a asp-action="Index" asp-all-route-data="@Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())" asp-route-sortOrder="@ViewData["DateSortParm"]" class="flex items-center space-x-1">
+                                <span>Ngày đặt</span> <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+                            </a>
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                            <a asp-action="Index" asp-all-route-data="@Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())" asp-route-sortOrder="@ViewData["TotalSortParm"]" class="flex items-center space-x-1">
+                                <span>Tổng tiền</span> <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+                            </a>
+                        </th>
+                        
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Trạng thái</th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    @foreach (var order in Model)
+                    {
+                        var statusDetails = GetStatusDetails(order.TrangThai);
+                            <tr>
+                                <td class="px-6 py-4 font-mono text-sm text-gray-700">#@order.MaHoaDon</td>
+                                <td class="px-6 py-4">
+                                    <p class="font-medium text-gray-900">@order.NguoiDung.HoTen</p>
+                                    <p class="text-sm text-gray-500">@order.NguoiDung.Email</p>
+                                </td>
+                                <td class="px-6 py-4 text-sm text-gray-600">@order.NgayDat.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="px-6 py-4 font-semibold text-red-600">@order.TongTien.ToString("N0")đ</td>
+                                <td class="px-6 py-4">
+                                    <form asp-action="UpdateStatus" method="post">
+                                    @Html.AntiForgeryToken()
+                                        <input type="hidden" name="orderId" value="@order.MaHoaDon" />
+                                        <input type="hidden" name="pageNumber" value="@Model.PageIndex" />
+                                        <input type="hidden" name="sortOrder" value="@ViewData["CurrentSort"]" />
+                                        <input type="hidden" name="currentSearchTerm" value="@ViewData["CurrentSearchTerm"]" />
+                                        <input type="hidden" name="currentStatusFilter" value="@ViewData["CurrentStatusFilter"]" />
+                                        <input type="hidden" name="currentStartDate" value="@ViewData["CurrentStartDate"]" />
+                                        <input type="hidden" name="currentEndDate" value="@ViewData["CurrentEndDate"]" />
+                                        <select name="newStatus" onchange="this.form.submit()" class="text-xs font-medium rounded-full border-0 focus:ring-2 focus:ring-red-500 @statusDetails.color">
+                                        @foreach (var status in statusOptions)
+                                        {
+                                                    <option value="@status" selected="@(order.TrangThai == status)">@status</option>
+                                        }
+                                        </select>
+                                    </form>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <a asp-action="Details" asp-route-id="@order.MaHoaDon" class="text-blue-600 hover:text-blue-800" title="Xem chi tiết">
+                                        <i data-lucide="eye" class="h-5 w-5"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="p-6 border-t flex items-center justify-between">
+            <span class="text-sm text-gray-700">Trang @Model.PageIndex / @Model.TotalPages</span>
+            <div class="flex items-center space-x-2">
+                @if (Model.HasPreviousPage)
+                {
+                        <a asp-action="Index" asp-all-route-data="@Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())" asp-route-pageNumber="@(Model.PageIndex - 1)" class="border rounded-md py-2 px-4 text-sm font-medium hover:bg-gray-50">Trước</a>
+                }
+                @if (Model.HasNextPage)
+                {
+                        <a asp-action="Index" asp-all-route-data="@Context.Request.Query.ToDictionary(q => q.Key, q => q.Value.ToString())" asp-route-pageNumber="@(Model.PageIndex + 1)" class="border rounded-md py-2 px-4 text-sm font-medium hover:bg-gray-50">Sau</a>
+                }
+            </div>
+        </div>
+    </div>
+</div>

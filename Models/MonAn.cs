@@ -10,9 +10,9 @@ namespace ASM1.Models
 
         [Required]
         [StringLength(150)]
-        public string TenMonAn { get; set; }
+        public string TenMonAn { get; set; } = null!;
 
-        public string MoTa { get; set; }
+        public string? MoTa { get; set; }
 
         [Required]
         [Range(0, double.MaxValue)]
@@ -28,6 +28,6 @@ namespace ASM1.Models
 
         public int MaLoai { get; set; }
         [ForeignKey("MaLoai")]
-        public virtual LoaiMonAn LoaiMonAn { get; set; }
+        public virtual LoaiMonAn LoaiMonAn { get; set; } = null!;
     }
 }

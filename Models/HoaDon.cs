@@ -20,6 +20,9 @@ namespace ASM1.Models
         [StringLength(255)]
         public string DiaChiGiaoHang { get; set; }
 
+        [StringLength(50)]
+        public string? PhuongThucThanhToan { get; set; }
+
         // Khóa ngoại
         public int MaNguoiDung { get; set; }
         [ForeignKey("MaNguoiDung")]

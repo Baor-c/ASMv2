@@ -7,7 +7,6 @@
             var Body = $('body');
             Body.addClass('preloader-site');
         });
-        // SỬA LỖI: Dùng $(window).on('load', ...) thay cho .load() đã bị loại bỏ trong jQuery 3+
         $(window).on('load', function () {
             $('.preloader-wrapper').fadeOut();
             $('body').removeClass('preloader-site');

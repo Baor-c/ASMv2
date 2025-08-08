@@ -1,0 +1,243 @@
+﻿@using FastFoodApp.Areas.Admin.Models
+@model PaginatedList<ASM1.Models.NguoiDung>
+@{
+    ViewData["Title"] = "Quản lý Người dùng";
+}
+
+<div id="modal-placeholder"></div>
+
+<div class="bg-white rounded-lg shadow-sm">
+    <div class="p-6 border-b border-gray-200">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-semibold text-gray-800">Danh sách Người dùng</h2>
+            <button id="add-btn" data-url="@Url.Action("CreatePartial")" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 flex items-center space-x-2">
+                <i data-lucide="plus" class="h-4 w-4"></i>
+                <span>Thêm người dùng</span>
+            </button>
+        </div>
+
+        <!-- Bộ lọc tìm kiếm nâng cao -->
+        <div class="bg-gray-50 p-4 rounded-lg mb-6">
+            <form method="get" asp-action="Index" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <!-- Tìm kiếm -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tìm kiếm</label>
+                        <input type="text" name="searchTerm" value="@ViewData["CurrentSearchTerm"]" 
+                               placeholder="Tên, email, SĐT, ID..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    </div>
+
+                    <!-- Lọc vai trò -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+                        <select name="roleFilter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                            <option value="">Tất cả vai trò</option>
+                            @foreach (var role in ViewBag.RoleList)
+                            {
+                                <option value="@role" selected="@(ViewData["CurrentRoleFilter"]?.ToString() == role)">@role</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Ngày sinh từ -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ngày sinh từ</label>
+                        <input type="date" name="startDate" value="@ViewData["CurrentStartDate"]" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    </div>
+
+                    <!-- Ngày sinh đến -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Ngày sinh đến</label>
+                        <input type="date" name="endDate" value="@ViewData["CurrentEndDate"]" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-1 focus:ring-red-500">
+                    </div>
+                </div>
+
+                <div class="flex space-x-3">
+                    <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2">
+                        <i data-lucide="search" class="h-4 w-4"></i>
+                        <span>Tìm kiếm</span>
+                    </button>
+                    <a asp-action="Index" class="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 flex items-center space-x-2">
+                        <i data-lucide="x" class="h-4 w-4"></i>
+                        <span>Xóa bộ lọc</span>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <a asp-action="Index" 
+                           asp-route-sortOrder="@ViewData["NameSortParm"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-roleFilter="@ViewData["CurrentRoleFilter"]"
+                           asp-route-startDate="@ViewData["CurrentStartDate"]"
+                           asp-route-endDate="@ViewData["CurrentEndDate"]"
+                           class="flex items-center space-x-1 hover:text-red-600">
+                            <span>Người dùng</span>
+                            <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vai trò</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                        <a asp-action="Index" 
+                           asp-route-sortOrder="@ViewData["DateSortParm"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-roleFilter="@ViewData["CurrentRoleFilter"]"
+                           asp-route-startDate="@ViewData["CurrentStartDate"]"
+                           asp-route-endDate="@ViewData["CurrentEndDate"]"
+                           class="flex items-center space-x-1 hover:text-red-600">
+                            <span>Ngày sinh</span>
+                            <i data-lucide="arrow-up-down" class="h-3 w-3"></i>
+                        </a>
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                @foreach (var user in Model)
+                {
+                        <tr>
+                            <td class="px-6 py-4">
+                                <p class="font-medium text-gray-900">@user.HoTen</p>
+                                <p class="text-sm text-gray-600">@user.Email</p>
+                                <p class="text-xs text-gray-500">@user.SoDienThoai</p>
+                            </td>
+                            <td class="px-6 py-4">
+                                <span class="px-2 py-1 text-xs rounded-full @(user.VaiTro?.TenVaiTro == "Admin" ? "bg-purple-100 text-purple-800" : "bg-gray-100 text-gray-800")">
+                                @(user.VaiTro?.TenVaiTro ?? "N/A")
+                                </span>
+                            </td>
+                            <td class="px-6 py-4 text-sm">@user.NgaySinh?.ToString("dd/MM/yyyy")</td>
+                            <td class="px-6 py-4">
+                                <div class="flex space-x-3">
+                                    <button data-url="@Url.Action("EditPartial", new { id = user.MaNguoiDung })" class="edit-btn text-blue-600 hover:text-blue-800" title="Sửa"><i data-lucide="edit" class="h-4 w-4"></i></button>
+                                    <a asp-action="Details" asp-route-id="@user.MaNguoiDung" class="text-gray-600 hover:text-gray-800" title="Chi tiết"><i data-lucide="eye" class="h-4 w-4"></i></a>
+                                    <a asp-action="Delete" asp-route-id="@user.MaNguoiDung" class="text-red-600 hover:text-red-800" title="Xóa"><i data-lucide="trash-2" class="h-4 w-4"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Phân trang -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="px-6 py-4 border-t border-gray-200">
+            <div class="flex items-center justify-between">
+                <div class="text-sm text-gray-700">
+                    Hiển thị từ <span class="font-medium">@((Model.PageIndex - 1) * 10 + 1)</span> đến <span class="font-medium">@(Math.Min(Model.PageIndex * 10, Model.Count))</span> của <span class="font-medium">@Model.Count</span> kết quả
+                </div>
+                <div class="flex space-x-1">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <a asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageIndex - 1)"
+                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-roleFilter="@ViewData["CurrentRoleFilter"]"
+                           asp-route-startDate="@ViewData["CurrentStartDate"]"
+                           asp-route-endDate="@ViewData["CurrentEndDate"]"
+                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">Trước</a>
+                    }
+
+                    @for (int i = Math.Max(1, Model.PageIndex - 2); i <= Math.Min(Model.TotalPages, Model.PageIndex + 2); i++)
+                    {
+                        @if (i == Model.PageIndex)
+                        {
+                            <span class="px-3 py-2 text-sm bg-red-600 text-white border border-red-600 rounded-md">@i</span>
+                        }
+                        else
+                        {
+                            <a asp-action="Index" 
+                               asp-route-pageNumber="@i"
+                               asp-route-sortOrder="@ViewData["CurrentSort"]"
+                               asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                               asp-route-roleFilter="@ViewData["CurrentRoleFilter"]"
+                               asp-route-startDate="@ViewData["CurrentStartDate"]"
+                               asp-route-endDate="@ViewData["CurrentEndDate"]"
+                               class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">@i</a>
+                        }
+                    }
+
+                    @if (Model.HasNextPage)
+                    {
+                        <a asp-action="Index" 
+                           asp-route-pageNumber="@(Model.PageIndex + 1)"
+                           asp-route-sortOrder="@ViewData["CurrentSort"]"
+                           asp-route-searchTerm="@ViewData["CurrentSearchTerm"]"
+                           asp-route-roleFilter="@ViewData["CurrentRoleFilter"]"
+                           asp-route-startDate="@ViewData["CurrentStartDate"]"
+                           asp-route-endDate="@ViewData["CurrentEndDate"]"
+                           class="px-3 py-2 text-sm bg-white border border-gray-300 rounded-md hover:bg-gray-50">Sau</a>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            var placeholder = $('#modal-placeholder');
+
+            $(document).on('click', 'button[data-url]', function () {
+                var url = $(this).data('url');
+                $.get(url).done(function (data) {
+                    var formAction = url.replace('Partial', '');
+                    var title = url.includes('Create') ? 'Thêm Người dùng mới' : 'Chỉnh sửa Người dùng';
+                    placeholder.html(createModalHtml(title, data, formAction));
+                    placeholder.find('.modal').removeClass('hidden');
+                });
+            });
+
+            placeholder.on('submit', '#modal-form', function (e) {
+                e.preventDefault();
+                var form = $(this);
+                $.ajax({
+                    url: form.attr('action'),
+                    method: 'post',
+                    data: form.serialize()
+                }).done(function (response) {
+                    if (response.success) {
+                        location.reload();
+                    } else {
+                        placeholder.find('.modal-body').html(response);
+                    }
+                });
+            });
+
+            placeholder.on('click', '[data-dismiss="modal"]', function () {
+                placeholder.find('.modal').addClass('hidden').remove();
+            });
+
+            function createModalHtml(title, body, formAction) {
+                return `<div class="modal fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                            <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl">
+                                <div class="p-6 border-b flex justify-between items-center">
+                                    <h3 class="text-xl font-semibold">${title}</h3>
+                                    <button data-dismiss="modal" class="text-gray-400 hover:text-gray-600">&times;</button>
+                                </div>
+                                <form id="modal-form" action="${formAction}" method="post">
+                                    <div class="modal-body p-6">${body}</div>
+                                    <div class="p-6 bg-gray-50 flex justify-end space-x-3">
+                                        <button type="button" data-dismiss="modal" class="border px-6 py-2 rounded-lg hover:bg-gray-50">Hủy</button>
+                                        <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700">Lưu</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>`;
+            }
+        });
+    </script>
+}

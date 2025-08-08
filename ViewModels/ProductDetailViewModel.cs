@@ -17,12 +17,6 @@ namespace FastFoodApp.ViewModels
     // ViewModel chính cho trang chi tiết
     public class ProductDetailViewModel
     {
-        public MonAn Product { get; set; }
-        public AddToCartViewModel CartInput { get; set; }
-
-        public ProductDetailViewModel()
-        {
-            CartInput = new AddToCartViewModel();
-        }
+        public MonAn Product { get; set; } = null!;
     }
 }

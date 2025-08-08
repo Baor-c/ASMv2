@@ -1,0 +1,28 @@
+﻿@model ASM1.Models.Combo
+@{
+    ViewData["Title"] = "Xác nhận Xóa Combo";
+}
+
+<div class="max-w-2xl mx-auto bg-white p-8 rounded-lg shadow-sm border border-red-200">
+    <h2 class="text-2xl font-semibold text-red-800 mb-4">Bạn có chắc chắn muốn xóa?</h2>
+    <p class="text-gray-600 mb-6">Hành động này sẽ xóa vĩnh viễn combo <strong class="text-gray-900">@Model.TenCombo</strong> và không thể hoàn tác.</p>
+
+    <div class="border rounded-lg p-4">
+        @if (Model.HinhAnh != null && Model.HinhAnh.Length > 0)
+        {
+                <img src="data:image/png;base64,@Convert.ToBase64String(Model.HinhAnh)" alt="@Model.TenCombo" class="w-full h-48 object-cover rounded-md mb-4" />
+        }
+        <h3 class="font-semibold text-lg">@Model.TenCombo</h3>
+        <p class="text-sm text-gray-600">@Model.MoTa</p>
+        <p class="text-lg font-bold text-red-600 mt-2">@Model.Gia.ToString("N0")đ</p>
+    </div>
+
+    <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="MaCombo" />
+        <div class="flex items-center justify-end space-x-4 pt-4 mt-6 border-t">
+            <a asp-action="Index" class="border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50 transition-colors">Hủy</a>
+            <button type="submit" class="bg-red-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-red-700 transition-colors">Xác nhận Xóa</button>
+        </div>
+    </form>
+</div>

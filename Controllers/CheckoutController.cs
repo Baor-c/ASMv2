@@ -70,27 +70,69 @@ namespace FastFoodApp.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Index(CheckoutSubmitModel model)
+        public async Task<IActionResult> Index(CheckoutViewModel model)
         {
-            if (!ModelState.IsValid)
+            // Debug: Log what we received
+            Console.WriteLine($"SelectedAddressId received: {model.SelectedAddressId}");
+            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
+            
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
             {
-                TempData["ToastError"] = "Vui lòng chọn địa chỉ nhận hàng.";
-                return RedirectToAction("Index"); 
+                return Challenge(); // Or redirect to login
             }
 
-            var userId = int.Parse(User.FindFirstValue("UserId"));
             var gioHang = Carts;
-
             if (gioHang.Count == 0)
             {
-                TempData["ToastWarning"] = "Giỏ hàng của bạn đã trống.";
+                TempData["ToastWarning"] = "Giỏ hàng của bạn trống.";
                 return RedirectToAction("Index", "Cart");
             }
 
-            var user = await _context.NguoiDungs.Include(u => u.CapThanhVien).FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
-            var selectedAddress = await _context.DiaChiNguoiDungs.FirstOrDefaultAsync(a => a.MaDiaChi == model.SelectedAddressId && a.MaNguoiDung == userId);
+            // Re-fetch addresses for validation
+            var userAddresses = await _context.DiaChiNguoiDungs
+                .Where(a => a.MaNguoiDung == userId)
+                .AsNoTracking()
+                .ToListAsync();
 
-            if (user == null || selectedAddress == null)
+            if (!userAddresses.Any())
+            {
+                TempData["ToastWarning"] = "Bạn cần thêm địa chỉ giao hàng trước khi đặt hàng.";
+                return RedirectToAction("Profile", "Account");
+            }
+
+            // Validate SelectedAddressId and PaymentMethod
+            if (!ModelState.IsValid || !userAddresses.Any(a => a.MaDiaChi == model.SelectedAddressId) || string.IsNullOrEmpty(model.PaymentMethod))
+            {
+                if (!userAddresses.Any(a => a.MaDiaChi == model.SelectedAddressId))
+                    TempData["ToastError"] = "Vui lòng chọn một địa chỉ giao hàng hợp lệ.";
+                else if (string.IsNullOrEmpty(model.PaymentMethod))
+                    TempData["ToastError"] = "Vui lòng chọn phương thức thanh toán.";
+                else
+                    TempData["ToastError"] = "Vui lòng kiểm tra lại thông tin đặt hàng.";
+                
+                // Re-populate the view model for the view
+                var userForViewModel = await _context.NguoiDungs.Include(u => u.CapThanhVien).AsNoTracking().FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
+                var tongTienGoc = gioHang.Sum(p => p.ThanhTien);
+                var phanTramGiamGia = userForViewModel?.CapThanhVien?.PhanTramGiamGia ?? 0;
+                var soTienGiam = (decimal)(phanTramGiamGia / 100) * tongTienGoc;
+                var tongTienThanhToan = tongTienGoc - soTienGiam;
+
+                model.Addresses = userAddresses;
+                model.CartItems = gioHang;
+                model.TongTienGoc = tongTienGoc;
+                model.PhanTramGiamGia = phanTramGiamGia;
+                model.SoTienGiam = soTienGiam;
+                model.TongTienThanhToan = tongTienThanhToan;
+                
+                return View(model);
+            }
+
+
+            var user = await _context.NguoiDungs.Include(u => u.CapThanhVien).FirstOrDefaultAsync(u => u.MaNguoiDung == userId);
+            var selectedAddress = userAddresses.First(a => a.MaDiaChi == model.SelectedAddressId);
+
+            if (user == null) 
             {
                 return NotFound();
             }
@@ -110,14 +152,22 @@ namespace FastFoodApp.Controllers
                         NgayDat = DateTime.Now,
                         DiaChiGiaoHang = $"{selectedAddress.TenNguoiNhan}, {selectedAddress.SoDienThoai}, {selectedAddress.DiaChiCuThe}",
                         TrangThai = "Chờ xử lý",
-                        TongTien = tongTienThanhToan
+                        TongTien = tongTienThanhToan,
+                        PhuongThucThanhToan = model.PaymentMethod
                     };
                     _context.Add(hoaDon);
                     await _context.SaveChangesAsync();
 
                     foreach (var item in gioHang)
                     {
-                        var chiTiet = new ChiTietHoaDon { MaHoaDon = hoaDon.MaHoaDon, SoLuong = item.SoLuong, DonGia = item.DonGia, MaCombo = item.IsCombo ? item.ItemId : (int?)null, MaMonAn = !item.IsCombo ? item.ItemId : (int?)null };
+                        var chiTiet = new ChiTietHoaDon 
+                        { 
+                            MaHoaDon = hoaDon.MaHoaDon, 
+                            SoLuong = item.SoLuong, 
+                            DonGia = item.DonGia, 
+                            MaCombo = item.IsCombo ? item.ItemId : (int?)null, 
+                            MaMonAn = !item.IsCombo ? item.ItemId : (int?)null 
+                        };
                         _context.Add(chiTiet);
                     }
 
@@ -138,9 +188,14 @@ namespace FastFoodApp.Controllers
                     TempData["ToastSuccess"] = "Đặt hàng thành công!";
                     return RedirectToAction("OrderSuccess", new { id = hoaDon.MaHoaDon });
                 }
-                catch (Exception)
+                catch (Exception ex) // Thay "Exception" bằng "Exception ex"
                 {
                     await transaction.RollbackAsync();
+                    
+                    Console.WriteLine("----------- CHECKOUT ERROR -----------");
+                    Console.WriteLine(ex.ToString()); 
+                    Console.WriteLine("------------------------------------");
+
                     TempData["ToastError"] = "Đã có lỗi xảy ra trong quá trình đặt hàng. Vui lòng thử lại.";
                 }
             }
@@ -151,7 +206,12 @@ namespace FastFoodApp.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAddressSelectionModal()
         {
-            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                return Challenge(); // Or return empty result
+            }
+            
             var userAddresses = await _context.DiaChiNguoiDungs
                                               .Where(a => a.MaNguoiDung == userId)
                                               .AsNoTracking()
@@ -161,7 +221,12 @@ namespace FastFoodApp.Controllers
         [HttpGet]
         public async Task<IActionResult> OrderSuccess(int id)
         {
-            var userId = int.Parse(User.FindFirstValue("UserId"));
+            var userIdString = User.FindFirstValue("UserId");
+            if (string.IsNullOrEmpty(userIdString) || !int.TryParse(userIdString, out var userId))
+            {
+                return Challenge(); // Or redirect to login
+            }
+            
             var order = await _context.HoaDons.Include(h => h.NguoiDung).Include(h => h.ChiTietHoaDons).ThenInclude(ct => ct.MonAn).Include(h => h.ChiTietHoaDons).ThenInclude(ct => ct.Combo).FirstOrDefaultAsync(h => h.MaHoaDon == id && h.MaNguoiDung == userId);
             if (order == null) return NotFound();
 
@@ -171,12 +236,14 @@ namespace FastFoodApp.Controllers
                 NgayDat = order.NgayDat,
                 ThoiGianGiaoHangDuKien = order.NgayDat.AddMinutes(30),
                 DiaChiGiaoHang = order.DiaChiGiaoHang,
-                SoDienThoai = order.NguoiDung.SoDienThoai,
-                PhuongThucThanhToan = "Thanh toán khi nhận hàng (COD)",
+                SoDienThoai = order.NguoiDung?.SoDienThoai ?? "",
+                PhuongThucThanhToan = order.PhuongThucThanhToan == "COD" ? "Thanh toán khi nhận hàng (COD)" : 
+                                   order.PhuongThucThanhToan == "VNPAY" ? "Thanh toán bằng mã QR" : 
+                                   order.PhuongThucThanhToan ?? "Thanh toán khi nhận hàng (COD)",
                 TongTienThanhToan = order.TongTien,
                 Items = order.ChiTietHoaDons.Select(item => new CartItemViewModel
                 {
-                    TenSanPham = item.MonAn?.TenMonAn ?? item.Combo?.TenCombo,
+                    TenSanPham = item.MonAn?.TenMonAn ?? item.Combo?.TenCombo ?? "Sản phẩm",
                     SoLuong = item.SoLuong,
                     DonGia = item.DonGia,
                     HinhAnh = Convert.ToBase64String(item.MonAn?.HinhAnh ?? item.Combo?.HinhAnh ?? new byte[0])

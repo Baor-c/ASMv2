@@ -1,4 +1,5 @@
-﻿using FastFoodApp.Data;
+﻿using ASM1.Models;
+using FastFoodApp.Data;
 using FastFoodApp.Helpers; 
 using FastFoodApp.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -109,8 +110,10 @@ namespace FastFoodApp.Controllers
             return RedirectToAction("Index");
         }
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public IActionResult AddToCartJson(int id, int quantity = 1, bool isCombo = false)
         {
+            Console.WriteLine($"AddToCartJson called: id={id}, quantity={quantity}, isCombo={isCombo}");
             var gioHang = Carts;
             var item = gioHang.SingleOrDefault(p => p.ItemId == id && p.IsCombo == isCombo);
 
@@ -120,13 +123,27 @@ namespace FastFoodApp.Controllers
                 {
                     var combo = _context.Combos.Find(id);
                     if (combo == null) return Json(new { success = false, message = "Sản phẩm không tồn tại." });
-                    item = new CartItemViewModel { ItemId = combo.MaCombo, TenSanPham = combo.TenCombo, DonGia = combo.Gia, SoLuong = quantity, IsCombo = true };
+                    item = new CartItemViewModel { 
+                        ItemId = combo.MaCombo, 
+                        TenSanPham = combo.TenCombo, 
+                        DonGia = combo.Gia, 
+                        SoLuong = quantity, 
+                        HinhAnh = combo.HinhAnh != null ? Convert.ToBase64String(combo.HinhAnh) : string.Empty,
+                        IsCombo = true 
+                    };
                 }
                 else
                 {
                     var monAn = _context.MonAns.Find(id);
                     if (monAn == null) return Json(new { success = false, message = "Sản phẩm không tồn tại." });
-                    item = new CartItemViewModel { ItemId = monAn.MaMonAn, TenSanPham = monAn.TenMonAn, DonGia = monAn.Gia, SoLuong = quantity, IsCombo = false };
+                    item = new CartItemViewModel { 
+                        ItemId = monAn.MaMonAn, 
+                        TenSanPham = monAn.TenMonAn, 
+                        DonGia = monAn.Gia, 
+                        SoLuong = quantity, 
+                        HinhAnh = monAn.HinhAnh != null ? Convert.ToBase64String(monAn.HinhAnh) : string.Empty,
+                        IsCombo = false 
+                    };
                 }
                 gioHang.Add(item);
             }
@@ -143,6 +160,71 @@ namespace FastFoodApp.Controllers
         public IActionResult GetCartCount()
         {
             return Json(new { count = Carts.Sum(i => i.SoLuong) });
+        }
+        
+        [HttpGet]
+        [Route("Cart/QuickAdd")]
+        public IActionResult QuickAddToCart(int id, int quantity = 1, bool isCombo = false, bool redirectToCart = false, decimal extraCost = 0)
+        {
+            var gioHang = Carts;
+            
+            // Find the item in cart by ID and type
+            var item = gioHang.SingleOrDefault(p => p.ItemId == id && p.IsCombo == isCombo);
+
+            if (item == null)
+            {
+                if (isCombo)
+                {
+                    var combo = _context.Combos.Find(id);
+                    if (combo == null) return Json(new { success = false, message = "Sản phẩm không tồn tại." });
+                    
+                    // Create cart item for combo
+                    string productName = combo.TenCombo;
+                    
+                    item = new CartItemViewModel { 
+                        ItemId = combo.MaCombo, 
+                        TenSanPham = productName, 
+                        DonGia = combo.Gia + extraCost, 
+                        SoLuong = quantity, 
+                        HinhAnh = combo.HinhAnh != null ? Convert.ToBase64String(combo.HinhAnh) : string.Empty,
+                        IsCombo = true,
+                        TenMonAn = string.Empty
+                    };
+                }
+                else
+                {
+                    var monAn = _context.MonAns.Find(id);
+                    if (monAn == null) return Json(new { success = false, message = "Sản phẩm không tồn tại." });
+                    
+                    // Create cart item for food
+                    string productName = monAn.TenMonAn;
+                    
+                    item = new CartItemViewModel { 
+                        ItemId = monAn.MaMonAn, 
+                        TenSanPham = productName, 
+                        DonGia = monAn.Gia + extraCost, 
+                        SoLuong = quantity, 
+                        HinhAnh = monAn.HinhAnh != null ? Convert.ToBase64String(monAn.HinhAnh) : string.Empty,
+                        IsCombo = false,
+                        TenMonAn = string.Empty,
+                        MaMonAn = monAn.MaMonAn
+                    };
+                }
+                gioHang.Add(item);
+            }
+            else
+            {
+                item.SoLuong += quantity;
+            }
+
+            HttpContext.Session.Set(CARTKEY, gioHang);
+            
+            if (redirectToCart)
+            {
+                return RedirectToAction("Index");
+            }
+            
+            return Json(new { success = true, message = "Thêm vào giỏ hàng thành công!", cartCount = gioHang.Sum(i => i.SoLuong) });
         }
         [HttpPost]
         public IActionResult UpdateCartItem(int itemId, bool isCombo, int quantity)
@@ -165,6 +247,20 @@ namespace FastFoodApp.Controllers
 
             return RedirectToAction("Index");
         }
+        [HttpPost]
+        // AddToCartWithOptions method has been removed as part of option-related functionality cleanup
 
+        private string GetCartSessionId()
+        {
+            string? cartSessionId = HttpContext.Session.GetString("CartSessionId");
+            if (cartSessionId == null)
+            {
+                // Nếu chưa có session ID, tạo một cái mới
+                Guid tempCartId = Guid.NewGuid();
+                cartSessionId = tempCartId.ToString();
+                HttpContext.Session.SetString("CartSessionId", cartSessionId);
+            }
+            return cartSessionId;
+        }
     }
 }
